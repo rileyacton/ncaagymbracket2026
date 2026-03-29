@@ -1891,19 +1891,28 @@ function updateProgress() {
 // TAB NAV
 // ══════════════════════════════════════════
 const TAB_IDS=['r1','r2','rf','sf','nc','bx','sb','lb'];
+function showLbLoading() {
+  const tbody = document.getElementById('lb-body');
+  const empty = document.getElementById('lb-empty');
+  const updated = document.getElementById('lb-last-updated');
+  if (tbody) tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:32px;color:var(--dim);font-style:italic;letter-spacing:1px;font-size:12px;">Loading…</td></tr>`;
+  if (empty) empty.style.display = 'none';
+  if (updated) updated.textContent = '';
+}
+
 function goTab(id,el) {
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('panel-'+id).classList.add('active');
   el.classList.add('active');
-  if (id==='lb') renderLeaderboard();
+  if (id==='lb') { showLbLoading(); renderLeaderboard(); }
 }
 function goTabId(id) {
   const idx=TAB_IDS.indexOf(id);
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
   document.getElementById('panel-'+id).classList.add('active');
-  if (id==='lb') renderLeaderboard();
+  if (id==='lb') { showLbLoading(); renderLeaderboard(); }
 }
 function resetAll() {
   const bar = document.getElementById('reset-confirm-bar');
