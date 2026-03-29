@@ -228,6 +228,20 @@ header h1 span { color: var(--gold); }
 .bx-hot { font-size: 10px; }
 
 /* LEADERBOARD */
+.lb-expand-btn { background: none; border: none; color: var(--dim); cursor: pointer; font-size: 11px; padding: 0 4px; transition: color .15s; }
+.lb-expand-btn:hover { color: var(--gold); }
+.lb-detail-row { display: none; }
+.lb-detail-row.open { display: table-row; }
+.lb-detail-row td { padding: 0 !important; border-bottom: 2px solid var(--border) !important; background: #0d1e36 !important; }
+.lb-detail-inner { padding: 12px 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px 20px; }
+.lb-detail-section { }
+.lb-detail-label { font-size: 8px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); margin-bottom: 5px; }
+.lb-detail-picks { display: flex; flex-direction: column; gap: 3px; }
+.lb-pick { font-size: 11px; display: flex; align-items: center; gap: 6px; }
+.lb-pick .pk-icon { font-size: 11px; width: 14px; flex-shrink: 0; }
+.pk-correct  { color: var(--green); }
+.pk-wrong    { color: #cc4444; }
+.pk-pending  { color: var(--dim); }
 
 .lb-submit-wrap { text-align: center; margin-bottom: 20px; }
 .lb-submit-msg { font-size: 11px; color: var(--dim); margin-bottom: 8px; }
@@ -407,6 +421,7 @@ header h1 span { color: var(--gold); }
       <table class="lb-table">
         <thead>
           <tr>
+            <th></th>
             <th>#</th>
             <th>Name</th>
             <th>Score</th>
@@ -1905,7 +1920,9 @@ async function submitBracket() {
   if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
   try {
     const snap = getBracketSnapshot();
+    console.log('Submitting snap:', snap);
     const result = await apiPost('submitBracket', snap);
+    console.log('Submit result:', result);
     if (result.error) throw new Error(result.error);
     S._submittedKey = result.key;
     save();
@@ -1917,14 +1934,98 @@ async function submitBracket() {
     updateSubmitButtons();
     renderLeaderboard();
   } catch(e) {
+    console.error('Submit error:', e);
     updateSubmitButtons();
     const msg = document.getElementById('bx-submit-msg');
-    if (msg) msg.textContent = 'Error submitting — please try again.';
-    console.error(e);
+    if (msg) msg.textContent = 'Error: ' + e.message;
   }
 }
 
 // Main leaderboard render
+function toggleLbRow(id) {
+  const row = document.getElementById('lb-detail-' + id);
+  const btn = document.getElementById('lb-btn-' + id);
+  if (!row) return;
+  const open = row.classList.toggle('open');
+  btn.textContent = open ? '▲' : '▼';
+}
+
+function buildDetailHTML(snap, results, colSpan) {
+  // Helper: mark a team pick
+  function teamMark(name, resultSet, resultKnown) {
+    if (!name) return '';
+    let icon, cls;
+    if (!resultKnown) { icon = '·'; cls = 'pk-pending'; }
+    else if (resultSet instanceof Set ? resultSet.has(name) : resultSet === name) { icon = '✓'; cls = 'pk-correct'; }
+    else { icon = '✗'; cls = 'pk-wrong'; }
+    return `<div class="lb-pick"><span class="pk-icon ${cls}">${icon}</span><span class="${cls}">${name}</span></div>`;
+  }
+
+  const r2Known    = results.r2.size > 0;
+  const rfKnown    = results.rf.size > 0;
+  const sfKnown    = results.sf.size > 0;
+  const champKnown = !!results.champ;
+
+  // Collect R2 picks from all quads
+  const r2Picks = [];
+  REGIONALS.forEach(reg => reg.quads.forEach(q => {
+    if (snap[q.id+'._1']) r2Picks.push(snap[q.id+'._1']);
+    if (snap[q.id+'._2']) r2Picks.push(snap[q.id+'._2']);
+  }));
+
+  // Collect RF picks
+  const rfPicks = [];
+  REGIONALS.forEach(reg => {
+    if (snap['rf_'+reg.id+'._1']) rfPicks.push(snap['rf_'+reg.id+'._1']);
+    if (snap['rf_'+reg.id+'._2']) rfPicks.push(snap['rf_'+reg.id+'._2']);
+  });
+
+  // Collect SF picks
+  const sfPicks = [];
+  SF.forEach(sf => {
+    if (snap[sf.id+'._1']) sfPicks.push(snap[sf.id+'._1']);
+    if (snap[sf.id+'._2']) sfPicks.push(snap[sf.id+'._2']);
+  });
+
+  // Bonus picks
+  const bonusSections = BONUS_APPARATUSES.map(app => {
+    const picks = snap['bx_'+app.id] || [];
+    if (!picks.length) return '';
+    const tensKnown = results.tens && Object.keys(results.tens).length > 0;
+    const actuals = new Set((results.tens || {})[app.id] || []);
+    const items = picks.map(p => {
+      const n = typeof p === 'string' ? p : p.name;
+      let icon, cls;
+      if (!tensKnown) { icon = '·'; cls = 'pk-pending'; }
+      else if (actuals.has(n)) { icon = '✓'; cls = 'pk-correct'; }
+      else { icon = '✗'; cls = 'pk-wrong'; }
+      return `<div class="lb-pick"><span class="pk-icon ${cls}">${icon}</span><span class="${cls}">${n}</span></div>`;
+    }).join('');
+    return `<div class="lb-detail-section">
+      <div class="lb-detail-label">${app.icon} ${app.label}</div>
+      <div class="lb-detail-picks">${items}</div>
+    </div>`;
+  }).join('');
+
+  const sections = [
+    { label: '② Second Round', picks: r2Picks,   set: results.r2,    known: r2Known },
+    { label: '③ Regional Final', picks: rfPicks,  set: results.rf,    known: rfKnown },
+    { label: '④ Semifinal',     picks: sfPicks,   set: results.sf,    known: sfKnown },
+    { label: '⑤ Champion',      picks: snap.champion ? [snap.champion] : [], set: results.champ, known: champKnown, single: true },
+  ].map(sec => {
+    if (!sec.picks.length) return '';
+    const items = sec.picks.map(n => teamMark(n, sec.set, sec.known)).join('');
+    return `<div class="lb-detail-section">
+      <div class="lb-detail-label">${sec.label}</div>
+      <div class="lb-detail-picks">${items}</div>
+    </div>`;
+  }).join('');
+
+  return `<td colspan="${colSpan}">
+    <div class="lb-detail-inner">${sections}${bonusSections}</div>
+  </td>`;
+}
+
 async function renderLeaderboard() {
   updateSubmitButtons();
 
@@ -1955,6 +2056,7 @@ async function renderLeaderboard() {
 
   const tbody = document.getElementById('lb-body');
   const empty = document.getElementById('lb-empty');
+  const COL_SPAN = 10; // number of columns in the table
 
   if (!entries.length) {
     tbody.innerHTML = '';
@@ -1972,7 +2074,10 @@ async function renderLeaderboard() {
       const champDisp = e.snap.champion || '—';
       const dt = new Date(e.snap.submittedAt);
       const dtStr = dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-      return `<tr class="${isFirst?'lb-first':''} ${isMe?'me-row':''}">
+      const rowId = 'r' + i;
+      const detailHTML = buildDetailHTML(e.snap, results, COL_SPAN);
+      return `<tr class="${isFirst?'lb-first':''} ${isMe?'me-row':''}" onclick="toggleLbRow('${rowId}')" style="cursor:pointer">
+        <td><button class="lb-expand-btn" id="lb-btn-${rowId}">▼</button></td>
         <td class="lb-rank">${rankDisp}</td>
         <td>${e.snap.name||'Anonymous'}${isMe?'<span class="lb-you">YOU</span>':''}</td>
         <td class="lb-score">${e.score.total}</td>
@@ -1982,7 +2087,8 @@ async function renderLeaderboard() {
         <td class="lb-champ">${champDisp}</td>
         <td class="lb-sub-pts" style="color:#f0d060">${e.score.bonus}</td>
         <td style="color:var(--dim);font-size:10px">${dtStr}</td>
-      </tr>`;
+      </tr>
+      <tr class="lb-detail-row" id="lb-detail-${rowId}">${detailHTML}</tr>`;
     }).join('');
   }
 
