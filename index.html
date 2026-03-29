@@ -382,6 +382,7 @@ header h1 span { color: var(--gold); }
     <div class="champ-name" id="champ-name">—</div>
     <div class="champ-hint" id="champ-hint">Pick the champion above</div>
   </div>
+  <div class="nav-hint">Done? <button onclick="goTabId('bx')">Next: Bonus Picks →</button></div>
 </div>
 
 <div class="panel" id="panel-bx">
@@ -391,6 +392,10 @@ header h1 span { color: var(--gold); }
     <div class="round-desc">Pick up to 5 gymnasts per apparatus who you think will score a 10.0 during the tournament</div>
   </div>
   <div class="bx-grid" id="bx-grid"></div>
+  <div class="lb-submit-wrap" id="bx-submit-wrap" style="display:none; margin-top:28px;">
+    <div class="lb-submit-msg" id="bx-submit-msg"></div>
+    <button class="lb-submit-btn" id="bx-submit-btn" onclick="submitBracket()" disabled>Submit My Bracket to Leaderboard</button>
+  </div>
 </div>
 
 <div class="panel" id="panel-sb">
@@ -1891,28 +1896,34 @@ function scoreBracket(snap, results) {
   };
 }
 
-// Update submit button on leaderboard tab
+// Update submit buttons (leaderboard tab + bonus tab)
 function updateSubmitButtons() {
   const picks = countPicks();
-  const wrapEl = document.getElementById('lb-submit-wrap');
-  const msgEl  = document.getElementById('lb-submit-msg');
-  const btnEl  = document.getElementById('lb-submit-btn');
-  if (!wrapEl) return;
-  if (!S._playerName) { wrapEl.style.display='none'; return; }
-  wrapEl.style.display = 'block';
-  if (S._submittedKey) {
-    msgEl.textContent = '✓ Your bracket has been submitted.';
-    btnEl.textContent = 'Update My Submission';
-    btnEl.disabled = false;
-  } else if (picks < 33) {
-    msgEl.textContent = `Complete all picks first (${picks}/33 done).`;
-    btnEl.textContent = 'Submit My Bracket to Leaderboard';
-    btnEl.disabled = true;
-  } else {
-    msgEl.textContent = 'All picks complete — ready to submit!';
-    btnEl.textContent = 'Submit My Bracket to Leaderboard';
-    btnEl.disabled = false;
-  }
+  const instances = [
+    { wrap:'lb-submit-wrap', msg:'lb-submit-msg', btn:'lb-submit-btn' },
+    { wrap:'bx-submit-wrap', msg:'bx-submit-msg', btn:'bx-submit-btn' },
+  ];
+  instances.forEach(({wrap, msg, btn}) => {
+    const wrapEl = document.getElementById(wrap);
+    const msgEl  = document.getElementById(msg);
+    const btnEl  = document.getElementById(btn);
+    if (!wrapEl) return;
+    if (!S._playerName) { wrapEl.style.display = 'none'; return; }
+    wrapEl.style.display = 'block';
+    if (S._submittedKey) {
+      msgEl.textContent = '✓ Your bracket has been submitted.';
+      btnEl.textContent = 'Update My Submission';
+      btnEl.disabled = false;
+    } else if (picks < 33) {
+      msgEl.textContent = `Complete all bracket picks first (${picks}/33 done).`;
+      btnEl.textContent = 'Submit My Bracket to Leaderboard';
+      btnEl.disabled = true;
+    } else {
+      msgEl.textContent = 'All picks complete — ready to submit!';
+      btnEl.textContent = 'Submit My Bracket to Leaderboard';
+      btnEl.disabled = false;
+    }
+  });
 }
 
 // ══════════════════════════════════════════
@@ -1935,25 +1946,34 @@ async function apiPost(action, data) {
 
 // Submit current bracket to Google Sheets
 async function submitBracket() {
-  const btn = document.getElementById('lb-submit-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
+  ['lb-submit-btn','bx-submit-btn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.disabled = true; el.textContent = 'Submitting…'; }
+  });
   try {
     const snap = getBracketSnapshot();
     const result = await apiPost('submitBracket', snap);
     if (result.error) throw new Error(result.error);
     S._submittedKey = result.key;
     save();
-    if (btn) btn.textContent = '✓ Submitted!';
-    const msg = document.getElementById('lb-submit-msg');
-    if (msg) msg.textContent = result.updated
-      ? 'Your bracket has been updated on the leaderboard.'
-      : 'Your bracket is on the leaderboard!';
+    ['lb-submit-btn','bx-submit-btn'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '✓ Submitted!';
+    });
+    ['lb-submit-msg','bx-submit-msg'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = result.updated
+        ? 'Your bracket has been updated on the leaderboard.'
+        : 'Your bracket is on the leaderboard!';
+    });
     updateSubmitButtons();
     renderLeaderboard();
   } catch(e) {
     updateSubmitButtons();
-    const msg = document.getElementById('lb-submit-msg');
-    if (msg) msg.textContent = 'Error submitting — please try again.';
+    ['lb-submit-msg','bx-submit-msg'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = 'Error submitting — please try again.';
+    });
     console.error(e);
   }
 }
