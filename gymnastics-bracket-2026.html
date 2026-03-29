@@ -1,0 +1,2148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 NCAA Women's Gymnastics Championship Bracket</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0a1628;
+  --gold: #c9a84c;
+  --gold-light: #e8c96a;
+  --cream: #f5f0e8;
+  --crimson: #8b1a1a;
+  --mid: #1e2d4a;
+  --border: #c9a84c55;
+  --dim: #8899aa;
+  --green: #a8e87a;
+  --green-bg: #1a2e0a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--navy); color: var(--cream); font-family: 'Courier Prime', monospace; min-height: 100vh; }
+
+header {
+  text-align: center; padding: 28px 20px 16px;
+  border-bottom: 2px solid var(--gold);
+  background: linear-gradient(180deg, #050d18 0%, var(--navy) 100%);
+}
+.hdr-ribbon { font-size: 10px; letter-spacing: 5px; color: var(--gold); margin-bottom: 6px; }
+header h1 { font-family: 'Playfair Display', serif; font-size: clamp(20px, 3.5vw, 38px); font-weight: 900; color: var(--cream); }
+header h1 span { color: var(--gold); }
+.hdr-sub { font-size: 10px; letter-spacing: 3px; color: var(--dim); margin-top: 6px; text-transform: uppercase; }
+
+.prog-bar-wrap { display: flex; align-items: center; gap: 12px; padding: 10px 20px; border-bottom: 1px solid var(--border); }
+.prog-track { flex: 1; height: 4px; background: #162040; border-radius: 2px; overflow: hidden; }
+.prog-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-light)); transition: width .3s; }
+.prog-pct { font-size: 10px; color: var(--gold); letter-spacing: 1px; white-space: nowrap; }
+.btn-reset { background: transparent; border: 1px solid var(--crimson); color: #cc4444; font-family: 'Courier Prime', monospace; font-size: 10px; padding: 3px 12px; cursor: pointer; letter-spacing: 1px; text-transform: uppercase; transition: all .2s; }
+.btn-reset:hover { background: var(--crimson); color: var(--cream); }
+
+#reset-confirm-bar {
+  display: none; align-items: center; gap: 12px; padding: 8px 20px;
+  background: #1a0808; border-bottom: 1px solid var(--crimson);
+  font-size: 12px; color: #cc8888;
+}
+#reset-confirm-bar button {
+  font-family: 'Courier Prime', monospace; font-size: 11px; padding: 4px 14px;
+  cursor: pointer; border-radius: 3px; border: none; letter-spacing: 1px;
+}
+.btn-confirm-yes { background: var(--crimson); color: var(--cream); }
+.btn-confirm-yes:hover { background: #aa2222; }
+.btn-confirm-no  { background: #2a3a5a; color: var(--cream); }
+.btn-confirm-no:hover  { background: #3a4a6a; }
+
+.tabs { display: flex; padding: 14px 20px 0; border-bottom: 2px solid var(--border); overflow-x: auto; gap: 2px; }
+.tab { padding: 7px 16px; font-family: 'Courier Prime', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; border: 1px solid var(--border); border-bottom: none; background: transparent; color: var(--dim); cursor: pointer; transition: all .2s; white-space: nowrap; border-radius: 3px 3px 0 0; }
+.tab:hover { color: var(--cream); border-color: var(--gold); }
+.tab.active { background: var(--gold); color: var(--navy); font-weight: 700; border-color: var(--gold); }
+
+.panel { display: none; padding: 20px; }
+.panel.active { display: block; }
+
+.round-hdr { text-align: center; margin-bottom: 20px; }
+.round-title { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--gold); }
+.round-date { font-size: 10px; letter-spacing: 3px; color: var(--dim); margin-top: 4px; text-transform: uppercase; }
+.round-desc { font-size: 11px; color: var(--dim); margin-top: 6px; }
+
+.matchup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; max-width: 1100px; margin: 0 auto; }
+.matchup-card { background: var(--mid); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+.matchup-card-hdr { background: var(--navy); border-bottom: 1px solid var(--border); padding: 8px 14px; display: flex; align-items: center; gap: 8px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+.lbl { font-size: 10px; letter-spacing: 2px; color: var(--gold); text-transform: uppercase; }
+.sub { margin-left: auto; font-size: 9px; color: var(--dim); }
+.matchup-body { padding: 10px; display: flex; flex-direction: column; gap: 5px; }
+
+/* Team button */
+.team-btn {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--navy); border: 1px solid #2a3a5a; border-radius: 3px;
+  padding: 8px 10px; cursor: pointer; font-family: 'Courier Prime', monospace;
+  font-size: 13px; color: var(--cream); text-align: left; transition: all .15s; width: 100%;
+}
+.team-btn:hover:not(.eliminated) { border-color: var(--gold); background: #162040; }
+.team-btn.selected { border-color: var(--gold); background: var(--green-bg); color: var(--green); }
+.team-btn.champion-sel { border-color: var(--gold-light); background: #2a1a00; color: var(--gold-light); }
+.team-btn.eliminated { opacity: 0.32; cursor: default; text-decoration: line-through; text-decoration-color: #cc444888; }
+.team-btn .chk { margin-left: auto; color: var(--green); opacity: 0; font-size: 14px; }
+.team-btn.selected .chk { opacity: 1; }
+.team-btn.champion-sel .chk { opacity: 1; color: var(--gold-light); }
+
+/* RTN rank badge — leftmost, gold for top 16, gray for 17+ */
+.rtn { font-size: 10px; font-weight: 700; min-width: 30px; text-align: center; border-radius: 2px; padding: 2px 5px; flex-shrink: 0; white-space: nowrap; }
+.rtn.top16 { color: var(--navy); background: var(--gold); }
+.rtn.lower  { color: var(--dim);  background: #2a3a5a; }
+.team-btn.selected .rtn.top16 { background: var(--gold-light); }
+.team-btn.selected .rtn.lower  { background: #283848; color: #88aaaa; }
+
+/* NCAA seed (small outlined badge after name, only for seeded teams) */
+.seed { font-size: 8px; font-weight: 700; color: var(--gold); border: 1px solid #c9a84c88; border-radius: 2px; padding: 0 4px; flex-shrink: 0; }
+.seed.un { display: none; }
+
+/* NQS score inline */
+.nqs { font-size: 9px; color: var(--dim); margin-left: 2px; }
+.team-btn.selected .nqs { color: #6aaa4a; }
+
+/* Play-in winner tag */
+.pi-tag { font-size: 8px; color: var(--gold); border: 1px solid var(--gold); border-radius: 2px; padding: 0 4px; margin-left: 4px; flex-shrink: 0; letter-spacing: 1px; }
+
+.tbd { padding: 8px 10px; font-size: 11px; color: var(--dim); font-style: italic; border: 1px dashed #2a3a5a; border-radius: 3px; }
+.pick-n { font-size: 9px; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; padding: 4px 0 2px; }
+
+.champ-box { max-width: 480px; margin: 0 auto; border: 2px solid var(--gold); border-radius: 6px; padding: 28px; text-align: center; background: linear-gradient(135deg, #1a1200, #0a1628); position: relative; overflow: hidden; }
+.champ-box::before { content: '★'; position: absolute; font-size: 140px; color: var(--gold); opacity: 0.05; top: -20px; right: -10px; }
+.champ-lbl { font-size: 10px; letter-spacing: 4px; color: var(--gold); margin-bottom: 10px; text-transform: uppercase; }
+.champ-name { font-family: 'Playfair Display', serif; font-size: clamp(22px, 4vw, 36px); color: var(--gold-light); text-shadow: 0 0 20px var(--gold); min-height: 44px; }
+.champ-hint { font-size: 11px; color: var(--dim); font-style: italic; margin-top: 8px; }
+
+.sb-wrap { max-width: 720px; margin: 0 auto; }
+.sb-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.sb-table th { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); border-bottom: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+.sb-table td { padding: 9px 12px; border-bottom: 1px solid #1a2a40; }
+.sb-table tr:hover td { background: #162040; }
+.sb-table tr.champ-row td { color: var(--gold-light); background: #1a1200; }
+.tag { display: inline-block; font-size: 8px; padding: 1px 5px; border-radius: 2px; margin-left: 6px; vertical-align: middle; }
+.tag.nat { background: #1a3a1a; color: #88cc66; }
+.tag.fin { background: #2a2200; color: var(--gold); }
+.tag.champ { background: #3a2a00; color: var(--gold-light); }
+
+.nav-hint { text-align: center; margin-top: 20px; font-size: 11px; color: var(--dim); }
+.nav-hint button { background: transparent; border: 1px solid var(--border); color: var(--gold); font-family: 'Courier Prime', monospace; font-size: 11px; padding: 5px 16px; cursor: pointer; border-radius: 3px; margin-left: 8px; transition: all .2s; }
+.nav-hint button:hover { background: var(--gold); color: var(--navy); }
+
+/* ENTRY SCREEN */
+#entry-screen {
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--navy);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 32px 24px;
+  background-image: radial-gradient(ellipse at 50% 0%, #1a2e4a 0%, var(--navy) 70%);
+}
+.entry-star { font-size: 48px; margin-bottom: 12px; opacity: 0.8; }
+.entry-title { font-family: 'Playfair Display', serif; font-size: clamp(24px, 5vw, 42px); font-weight: 900; color: var(--cream); text-align: center; line-height: 1.1; margin-bottom: 6px; }
+.entry-title span { color: var(--gold); }
+.entry-sub { font-size: 10px; letter-spacing: 3px; color: var(--dim); text-transform: uppercase; margin-bottom: 36px; text-align: center; }
+.entry-form { width: 100%; max-width: 340px; display: flex; flex-direction: column; gap: 14px; }
+.entry-label { font-size: 10px; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; margin-bottom: 4px; }
+.entry-input {
+  width: 100%; padding: 13px 16px;
+  background: var(--mid); border: 1px solid var(--border); border-radius: 4px;
+  font-family: 'Courier Prime', monospace; font-size: 16px; color: var(--cream);
+  outline: none; transition: border-color .2s;
+}
+.entry-input:focus { border-color: var(--gold); }
+.entry-input::placeholder { color: var(--dim); }
+.entry-btn {
+  width: 100%; padding: 14px;
+  background: var(--gold); border: none; border-radius: 4px;
+  font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700;
+  color: var(--navy); cursor: pointer; transition: all .2s; letter-spacing: 1px;
+}
+.entry-btn:hover { background: var(--gold-light); }
+.entry-btn:disabled { opacity: 0.4; cursor: default; }
+.entry-error { font-size: 11px; color: #cc6666; text-align: center; min-height: 16px; }
+
+/* Player name in header */
+.player-name-bar {
+  text-align: center; padding: 6px 20px;
+  font-size: 11px; color: var(--dim); letter-spacing: 2px;
+  border-bottom: 1px solid var(--border);
+  background: #0d1e36;
+}
+.player-name-bar span { color: var(--gold); font-weight: 700; }
+
+/* BONUS TAB */
+.bx-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; max-width: 1100px; margin: 0 auto; }
+.bx-card { background: var(--mid); border: 1px solid var(--border); border-radius: 4px; overflow: visible; }
+.bx-card-hdr { background: var(--navy); border-bottom: 2px solid var(--gold); padding: 10px 14px; display: flex; align-items: center; gap: 10px; border-radius: 4px 4px 0 0; }
+.bx-apparatus { font-size: 10px; letter-spacing: 2px; color: var(--gold); text-transform: uppercase; font-weight: 700; }
+.bx-counter { margin-left: auto; font-size: 10px; color: var(--dim); }
+.bx-counter.full { color: var(--gold); font-weight: 700; }
+.bx-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+
+/* Chip (selected gymnast) */
+.bx-chips { display: flex; flex-direction: column; gap: 5px; }
+.bx-chip {
+  display: flex; align-items: center; gap: 8px;
+  background: #2a1a00; border: 1px solid #f0d060; border-radius: 3px;
+  padding: 6px 10px; font-size: 12px; color: #f0d060;
+}
+.bx-chip-name { flex: 1; font-weight: 700; }
+.bx-chip-team { font-size: 10px; color: #c0a040; }
+.bx-chip-remove {
+  background: transparent; border: none; color: #c08020; cursor: pointer;
+  font-size: 13px; padding: 0 2px; line-height: 1; flex-shrink: 0;
+  transition: color .15s;
+}
+.bx-chip-remove:hover { color: #ff6644; }
+
+/* Search input */
+.bx-search-wrap { position: relative; }
+.bx-search-input {
+  width: 100%; padding: 8px 12px; background: var(--navy); border: 1px solid #2a3a5a;
+  border-radius: 3px; font-family: 'Courier Prime', monospace; font-size: 13px;
+  color: var(--cream); outline: none; transition: border-color .15s;
+}
+.bx-search-input:focus { border-color: var(--gold); }
+.bx-search-input::placeholder { color: var(--dim); }
+
+/* Dropdown */
+.bx-dropdown {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+  background: #162040; border: 1px solid var(--border); border-top: none;
+  border-radius: 0 0 4px 4px; max-height: 220px; overflow-y: auto;
+}
+.bx-drop-item {
+  padding: 8px 12px; font-size: 12px; cursor: pointer; transition: background .1s;
+  border-bottom: 1px solid #1a2a40; color: var(--cream);
+  display: flex; align-items: center; gap: 8px;
+}
+.bx-drop-item:last-child { border-bottom: none; }
+.bx-drop-item:hover, .bx-drop-item.active { background: #1e3060; }
+.bx-drop-team { color: var(--dim); font-size: 10px; margin-left: auto; }
+.bx-drop-custom { color: var(--gold); font-style: italic; }
+.bx-drop-custom strong { color: var(--gold-light); }
+.bx-full-msg { font-size: 11px; color: var(--dim); font-style: italic; padding: 4px 2px; }
+.bx-hot { font-size: 10px; }
+
+/* LEADERBOARD */
+.lb-wrap { max-width: 720px; margin: 0 auto; }
+
+.results-box {
+  background: var(--mid); border: 1px solid var(--border); border-radius: 4px;
+  padding: 16px; margin-bottom: 20px;
+}
+.results-title { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold); margin-bottom: 4px; }
+.results-desc { font-size: 10px; color: var(--dim); margin-bottom: 14px; letter-spacing: .5px; }
+.results-grid { display: flex; flex-direction: column; gap: 10px; }
+.results-round { }
+.results-round-label { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+.results-teams { display: flex; flex-wrap: wrap; gap: 6px; }
+.result-tag {
+  padding: 5px 12px; font-family: 'Courier Prime', monospace; font-size: 12px;
+  border: 1px solid #2a3a5a; border-radius: 3px; background: var(--navy);
+  color: var(--dim); cursor: pointer; transition: all .15s;
+}
+.result-tag:hover { border-color: var(--gold); color: var(--cream); }
+.result-tag.confirmed { background: #1a2e0a; border-color: var(--green); color: var(--green); }
+
+.lb-submit-wrap { text-align: center; margin-bottom: 20px; }
+.lb-submit-msg { font-size: 11px; color: var(--dim); margin-bottom: 8px; }
+.lb-submit-btn {
+  background: var(--gold); border: none; border-radius: 4px; padding: 10px 28px;
+  font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700;
+  color: var(--navy); cursor: pointer; transition: all .2s;
+}
+.lb-submit-btn:hover { background: var(--gold-light); }
+.lb-submit-btn:disabled { opacity: 0.4; cursor: default; }
+
+.lb-table-wrap { }
+.lb-refresh-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.lb-last-updated { font-size: 10px; color: var(--dim); }
+.lb-refresh-btn {
+  background: transparent; border: 1px solid var(--border); color: var(--gold);
+  font-family: 'Courier Prime', monospace; font-size: 11px; padding: 3px 12px;
+  cursor: pointer; border-radius: 3px; transition: all .2s;
+}
+.lb-refresh-btn:hover { background: var(--gold); color: var(--navy); }
+
+.lb-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.lb-table th { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); border-bottom: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+.lb-table td { padding: 9px 10px; border-bottom: 1px solid #1a2a40; }
+.lb-table tr:hover td { background: #162040; }
+.lb-table tr.me-row td { background: #0f2010; }
+.lb-table tr.lb-first td { color: var(--gold-light); }
+.lb-rank { font-size: 14px; font-weight: 700; color: var(--gold); }
+.lb-score { font-size: 16px; font-weight: 700; color: var(--cream); }
+.lb-champ { font-size: 11px; }
+.lb-sub-pts { font-size: 10px; color: var(--dim); }
+.lb-you { font-size: 8px; background: var(--gold); color: var(--navy); border-radius: 2px; padding: 1px 5px; margin-left: 6px; font-weight: 700; }
+.lb-empty { text-align: center; padding: 32px; color: var(--dim); font-size: 13px; font-style: italic; }
+</style>
+</head>
+<body>
+
+<!-- ENTRY SCREEN -->
+<div id="entry-screen">
+  <div class="entry-star">🤸‍♀️</div>
+  <div class="entry-title">NCAA Women's <span>Gymnastics</span><br>2026 Bracket Contest</div>
+  <div class="entry-sub">April 1–18 · Fort Worth, TX</div>
+  <div class="entry-form">
+    <div>
+      <div class="entry-label">Your Name</div>
+      <input class="entry-input" id="entry-name-input" type="text" placeholder="Enter your name…" maxlength="40" autocomplete="name">
+    </div>
+    <div class="entry-error" id="entry-error"></div>
+    <button class="entry-btn" id="entry-btn" disabled>Enter the Contest →</button>
+  </div>
+</div>
+
+<header>
+  <div class="hdr-ribbon">★ &nbsp; 2026 Bracket Contest &nbsp; ★</div>
+  <h1>NCAA Women's <span>Gymnastics</span> Championship</h1>
+  <div class="hdr-sub">Pick every round · April 1–18, 2026 · Fort Worth, TX</div>
+</header>
+
+<div class="player-name-bar" id="player-name-bar" style="display:none">
+  Bracket for: <span id="player-name-display"></span>
+</div>
+
+<div class="prog-bar-wrap">
+  <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+  <div class="prog-pct" id="prog-pct">0 / 33 picks</div>
+  <button class="btn-reset" onclick="resetAll()">✕ Reset</button>
+</div>
+
+<div id="reset-confirm-bar">
+  ⚠ Reset all picks? This cannot be undone.
+  <button class="btn-confirm-yes" onclick="resetConfirmed()">Yes, reset</button>
+  <button class="btn-confirm-no"  onclick="resetCancelled()">Cancel</button>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="goTab('r1',this)">① First Round</button>
+  <button class="tab"        onclick="goTab('r2',this)">② Second Round</button>
+  <button class="tab"        onclick="goTab('rf',this)">③ Regional Final</button>
+  <button class="tab"        onclick="goTab('sf',this)">④ Semifinal</button>
+  <button class="tab"        onclick="goTab('nc',this)">⑤ Championship</button>
+  <button class="tab"        onclick="goTab('bx',this)">⭐ Bonus</button>
+  <button class="tab"        onclick="goTab('sb',this)">📋 My Bracket</button>
+  <button class="tab"        onclick="goTab('lb',this)">🏅 Leaderboard</button>
+</div>
+
+<div class="panel active" id="panel-r1">
+  <div class="round-hdr">
+    <div class="round-title">First Round — Play-Ins</div>
+    <div class="round-date">April 1 / 2</div>
+    <div class="round-desc">4 play-in matches · winner joins the Second Round quad</div>
+  </div>
+  <div class="matchup-grid" id="grid-r1"></div>
+  <div class="nav-hint">Done? <button onclick="goTabId('r2')">Next: Second Round →</button></div>
+</div>
+
+<div class="panel" id="panel-r2">
+  <div class="round-hdr">
+    <div class="round-title">Second Round</div>
+    <div class="round-date">April 2 / 3</div>
+    <div class="round-desc">8 quad meets · pick the top 2 from each to advance to the Regional Final</div>
+  </div>
+  <div class="matchup-grid" id="grid-r2"></div>
+  <div class="nav-hint">Done? <button onclick="goTabId('rf')">Next: Regional Final →</button></div>
+</div>
+
+<div class="panel" id="panel-rf">
+  <div class="round-hdr">
+    <div class="round-title">Regional Final</div>
+    <div class="round-date">April 4 / 5</div>
+    <div class="round-desc">4 regionals of 4 teams · pick the top 2 per regional to go to Fort Worth</div>
+  </div>
+  <div class="matchup-grid" id="grid-rf"></div>
+  <div class="nav-hint">Done? <button onclick="goTabId('sf')">Next: Semifinal →</button></div>
+</div>
+
+<div class="panel" id="panel-sf">
+  <div class="round-hdr">
+    <div class="round-title">National Semifinal</div>
+    <div class="round-date">April 16 · Fort Worth, TX · ESPN2</div>
+    <div class="round-desc">2 sessions of 4 teams · top 2 from each advance to the Championship</div>
+  </div>
+  <div class="matchup-grid" id="grid-sf"></div>
+  <div class="nav-hint">Done? <button onclick="goTabId('nc')">Next: Championship →</button></div>
+</div>
+
+<div class="panel" id="panel-nc">
+  <div class="round-hdr">
+    <div class="round-title">National Championship</div>
+    <div class="round-date">April 18 · Fort Worth, TX · ABC</div>
+    <div class="round-desc">4 finalists · pick your national champion</div>
+  </div>
+  <div class="matchup-grid" id="grid-nc" style="max-width:420px;margin:0 auto 24px;"></div>
+  <div class="champ-box">
+    <div class="champ-lbl">🏆 2026 National Champion</div>
+    <div class="champ-name" id="champ-name">—</div>
+    <div class="champ-hint" id="champ-hint">Pick the champion above</div>
+  </div>
+</div>
+
+<div class="panel" id="panel-bx">
+  <div class="round-hdr">
+    <div class="round-title">⭐ Bonus Picks</div>
+    <div class="round-date">+1 point for each correct pick</div>
+    <div class="round-desc">Pick up to 5 gymnasts per apparatus who you think will score a 10.0 during the tournament</div>
+  </div>
+  <div class="bx-grid" id="bx-grid"></div>
+</div>
+
+<div class="panel" id="panel-sb">
+  <div class="sb-wrap">
+    <div class="round-hdr"><div class="round-title">My Full Bracket</div><div class="round-date">All picks at a glance</div></div>
+    <table class="sb-table">
+      <thead><tr><th>Team</th><th>NQS</th><th>RTN Rank</th><th>Furthest Round</th><th>Regional</th></tr></thead>
+      <tbody id="sb-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="panel" id="panel-lb">
+  <div class="lb-wrap">
+    <div class="round-hdr">
+      <div class="round-title">🏅 Leaderboard</div>
+      <div class="round-date">Scoring: 1pt Second Round · 2pt Regional Final · 4pt Semifinal · 8pt Champion · 1pt per 10.0 bonus</div>
+    </div>
+
+    <!-- Results entry (shared, visible to all) -->
+    <div class="results-box" id="results-box">
+      <div class="results-title">Enter Actual Results</div>
+      <div class="results-desc">As rounds complete, enter the teams that actually advanced. Scores update automatically for all entrants.</div>
+      <div class="results-grid" id="results-grid"></div>
+    </div>
+
+    <!-- Bonus results entry -->
+    <div class="results-box" id="bonus-results-box" style="margin-top:16px">
+      <div class="results-title">⭐ Enter Actual 10.0s</div>
+      <div class="results-desc">Mark gymnasts who scored a 10.0 during the tournament. +1 bonus point per correct pick.</div>
+      <div class="results-grid" id="bonus-results-grid"></div>
+    </div>
+
+    <!-- Submit bracket prompt -->
+    <div class="lb-submit-wrap" id="lb-submit-wrap" style="display:none">
+      <div class="lb-submit-msg" id="lb-submit-msg"></div>
+      <button class="lb-submit-btn" id="lb-submit-btn" onclick="submitBracket()">Submit My Bracket to Leaderboard</button>
+    </div>
+
+    <!-- Leaderboard table -->
+    <div class="lb-table-wrap">
+      <div class="lb-refresh-row">
+        <span id="lb-last-updated"></span>
+        <button class="lb-refresh-btn" onclick="renderLeaderboard()">↻ Refresh</button>
+      </div>
+      <table class="lb-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Score</th>
+            <th>R2</th>
+            <th>RF</th>
+            <th>SF</th>
+            <th>Champ</th>
+            <th>⭐ Bonus</th>
+            <th>Submitted</th>
+          </tr>
+        </thead>
+        <tbody id="lb-body"></tbody>
+      </table>
+      <div id="lb-empty" class="lb-empty" style="display:none">No brackets submitted yet. Be the first!</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// TEAM REGISTRY — single source of truth for seed, NQS, RTN rank
+// RTN ranks from roadtonationals.com final 2026 standings (week 12)
+// NQS scores from official NCAA bracket image
+// ══════════════════════════════════════════
+// RTN ranks from roadtonationals.com Week 12 final standings (screenshots)
+// NQS from official NCAA bracket image
+const TEAMS = {
+  // Lexington
+  'Missouri':       { seed: 8,  nqs: '197.178', rtn:  8 },
+  'Arkansas':       { seed: 9,  nqs: '197.170', rtn:  9 },
+  'NC State':       { seed: null, nqs: '196.452', rtn: 21 },
+  'Maryland':       { seed: null, nqs: '195.845', rtn: 27 },
+  'Oklahoma':       { seed: 1,  nqs: '197.980', rtn:  1 },
+  'Kentucky':       { seed: 16, nqs: '196.550', rtn: 16 },
+  'Ohio St.':       { seed: null, nqs: '196.492', rtn: 18 },
+  'Central Mich.':  { seed: null, nqs: '195.597', rtn: 31 },
+  'Rutgers':        { seed: null, nqs: '195.398', rtn: 36 },
+  // Corvallis
+  'Alabama':        { seed: 5,  nqs: '197.498', rtn:  5 },
+  'Utah':           { seed: 12, nqs: '197.075', rtn: 12 },
+  'Denver':         { seed: null, nqs: '196.383', rtn: 23 },
+  'Oregon St.':     { seed: null, nqs: '196.106', rtn: 25 },
+  'UCLA':           { seed: 4,  nqs: '197.540', rtn:  4 },
+  'Minnesota':      { seed: 13, nqs: '196.842', rtn: 13 },
+  'Iowa':           { seed: null, nqs: '196.473', rtn: 19 },
+  'San Jose St.':   { seed: null, nqs: '195.725', rtn: 29 },
+  'Washington':     { seed: null, nqs: '195.420', rtn: 35 },
+  // Baton Rouge
+  'LSU':            { seed: 2,  nqs: '197.920', rtn:  2 },
+  'Clemson':        { seed: 15, nqs: '196.686', rtn: 15 },
+  'Auburn':         { seed: null, nqs: '196.498', rtn: 17 },
+  'Air Force':      { seed: null, nqs: '195.605', rtn: 30 },
+  'Nebraska':       { seed: null, nqs: '195.561', rtn: 34 },
+  'Stanford':       { seed: 7,  nqs: '197.248', rtn:  7 },
+  'Michigan':       { seed: 10, nqs: '197.111', rtn: 10 },
+  'North Carolina': { seed: null, nqs: '196.393', rtn: 22 },
+  'Utah St.':       { seed: null, nqs: '195.905', rtn: 26 },
+  // Tempe
+  'Florida':        { seed: 3,  nqs: '197.753', rtn:  3 },
+  'California':     { seed: 14, nqs: '196.716', rtn: 14 },
+  'Penn St.':       { seed: null, nqs: '196.470', rtn: 20 },
+  'Arizona St.':    { seed: null, nqs: '195.590', rtn: 32 },
+  'Arizona':        { seed: null, nqs: '195.583', rtn: 33 },
+  'Georgia':        { seed: 6,  nqs: '197.391', rtn:  6 },
+  'Michigan St.':   { seed: 11, nqs: '197.103', rtn: 11 },
+  'BYU':            { seed: null, nqs: '196.228', rtn: 24 },
+  'Southern Utah':  { seed: null, nqs: '195.818', rtn: 28 },
+};
+
+function tinfo(name) { return TEAMS[name] || { seed: null, nqs: null, rtn: null }; }
+
+// ══════════════════════════════════════════
+// BRACKET STRUCTURE
+// ══════════════════════════════════════════
+const REGIONALS = [
+  {
+    id:'lex', name:'Lexington', side:'Left',
+    playins:[{ id:'pi_lex', a:'Central Mich.', b:'Rutgers' }],
+    quads:[
+      { id:'q_lex_a', label:'Lexington — Quad A', piSlot:false,
+        teams:['Missouri','Arkansas','NC State','Maryland'] },
+      { id:'q_lex_b', label:'Lexington — Quad B', piSlot:true, piId:'pi_lex',
+        teams:['Oklahoma','Kentucky','Ohio St.'] }
+    ]
+  },
+  {
+    id:'crv', name:'Corvallis', side:'Left',
+    playins:[{ id:'pi_crv', a:'San Jose St.', b:'Washington' }],
+    quads:[
+      { id:'q_crv_a', label:'Corvallis — Quad A', piSlot:false,
+        teams:['Alabama','Utah','Denver','Oregon St.'] },
+      { id:'q_crv_b', label:'Corvallis — Quad B', piSlot:true, piId:'pi_crv',
+        teams:['UCLA','Minnesota','Iowa'] }
+    ]
+  },
+  {
+    id:'btr', name:'Baton Rouge', side:'Right',
+    playins:[{ id:'pi_btr', a:'Air Force', b:'Nebraska' }],
+    quads:[
+      { id:'q_btr_a', label:'Baton Rouge — Quad A', piSlot:true, piId:'pi_btr',
+        teams:['LSU','Clemson','Auburn'] },
+      { id:'q_btr_b', label:'Baton Rouge — Quad B', piSlot:false,
+        teams:['Stanford','Michigan','North Carolina','Utah St.'] }
+    ]
+  },
+  {
+    id:'tmp', name:'Tempe', side:'Right',
+    playins:[{ id:'pi_tmp', a:'Arizona St.', b:'Arizona' }],
+    quads:[
+      { id:'q_tmp_a', label:'Tempe — Quad A', piSlot:true, piId:'pi_tmp',
+        teams:['Florida','California','Penn St.'] },
+      { id:'q_tmp_b', label:'Tempe — Quad B', piSlot:false,
+        teams:['Georgia','Michigan St.','BYU','Southern Utah'] }
+    ]
+  }
+];
+
+const SF = [
+  { id:'sf_a', label:'Semifinal — Session 1', regIds:['lex','crv'] },
+  { id:'sf_b', label:'Semifinal — Session 2', regIds:['btr','tmp'] }
+];
+
+// ══════════════════════════════════════════
+// STATE — single object, never reassigned
+// ══════════════════════════════════════════
+const S = {};
+const STORAGE_KEY = 'gym26d';
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) Object.assign(S, JSON.parse(raw));
+  } catch {}
+}
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(S)); } catch {}
+}
+function clearState() {
+  Object.keys(S).forEach(k => delete S[k]);
+  try { localStorage.removeItem(STORAGE_KEY); } catch {}
+}
+// ══════════════════════════════════════════
+// ENTRY SCREEN
+// ══════════════════════════════════════════
+function onNameInput() {
+  const val = document.getElementById('entry-name-input').value.trim();
+  document.getElementById('entry-btn').disabled = val.length < 2;
+  document.getElementById('entry-error').textContent = '';
+}
+function submitEntry() {
+  const name = document.getElementById('entry-name-input').value.trim();
+  if (name.length < 2) {
+    document.getElementById('entry-error').textContent = 'Please enter at least 2 characters.';
+    return;
+  }
+  S._playerName = name;
+  save();
+  showBracket(name);
+}
+function showBracket(name) {
+  document.getElementById('entry-screen').style.display = 'none';
+  document.getElementById('player-name-bar').style.display = 'block';
+  document.getElementById('player-name-display').textContent = name;
+}
+
+// On load: if name already saved, skip entry screen
+document.addEventListener('DOMContentLoaded', function() {
+  // Attach entry screen handlers here so they're guaranteed to be in scope
+  const nameInput = document.getElementById('entry-name-input');
+  const entryBtn  = document.getElementById('entry-btn');
+  if (nameInput) {
+    nameInput.addEventListener('input', onNameInput);
+    nameInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') submitEntry();
+    });
+  }
+  if (entryBtn) entryBtn.addEventListener('click', submitEntry);
+
+  loadState();
+  if (S._playerName) {
+    showBracket(S._playerName);
+  }
+  renderAll();
+});const piWinner = id => S[id]||null;
+const quadAdvs = id => [S[id+'._1'],S[id+'._2']].filter(Boolean);
+const rfPool   = rid => REGIONALS.find(r=>r.id===rid).quads.flatMap(q=>quadAdvs(q.id));
+const rfAdvs   = rid => [S['rf_'+rid+'._1'],S['rf_'+rid+'._2']].filter(Boolean);
+const sfAdvs   = id  => [S[id+'._1'],S[id+'._2']].filter(Boolean);
+const natPool  = ()  => SF.flatMap(s=>sfAdvs(s.id));
+
+function cascadeFromPi(piId) {
+  REGIONALS.forEach(reg=>reg.quads.forEach(q=>{
+    if (q.piSlot && q.piId===piId) {
+      ['._1','._2'].forEach(k=>{
+        if (S[q.id+k] && !q.teams.includes(S[q.id+k])) delete S[q.id+k];
+      });
+    }
+  }));
+  cascadeFromQuads();
+}
+function cascadeFromQuads() {
+  REGIONALS.forEach(reg=>{
+    const pool=rfPool(reg.id);
+    ['._1','._2'].forEach(k=>{ if(S['rf_'+reg.id+k]&&!pool.includes(S['rf_'+reg.id+k])) delete S['rf_'+reg.id+k]; });
+  });
+  cascadeFromRF();
+}
+function cascadeFromRF() {
+  SF.forEach(sf=>{
+    const pool=sf.regIds.flatMap(rid=>rfAdvs(rid));
+    ['._1','._2'].forEach(k=>{ if(S[sf.id+k]&&!pool.includes(S[sf.id+k])) delete S[sf.id+k]; });
+  });
+  if (S.champion && !natPool().includes(S.champion)) delete S.champion;
+}
+
+function pickPi(piId, name) {
+  S[piId] = (S[piId]===name) ? null : name;
+  if (!S[piId]) delete S[piId];
+  cascadeFromPi(piId); save(); renderAll();
+}
+function pick2(baseKey, name, cascade) {
+  const k1=baseKey+'._1', k2=baseKey+'._2';
+  if (S[k1]===name) { delete S[k1]; if(S[k2]){S[k1]=S[k2];delete S[k2];} }
+  else if (S[k2]===name) { delete S[k2]; }
+  else if (!S[k1]) S[k1]=name;
+  else if (!S[k2]) S[k2]=name;
+  else { S[k1]=S[k2]; S[k2]=name; }
+  cascade(); save(); renderAll();
+}
+function pickQuad(qid,name){ pick2(qid,name,cascadeFromQuads); }
+function pickRF(rid,name)  { pick2('rf_'+rid,name,cascadeFromRF); }
+function pickSF(sfId,name) { pick2(sfId,name,()=>{ if(S.champion&&!natPool().includes(S.champion))delete S.champion; }); save(); renderAll(); }
+function pickChamp(name)   { S.champion=(S.champion===name)?null:name; save(); renderAll(); }
+
+// ══════════════════════════════════════════
+// RENDER HELPERS
+// ══════════════════════════════════════════
+// Build a team button: [RTN#] Name [NCAA seed] NQS  ✓
+function tbtn(name, sel, elim, clickExpr, isChamp, isPiWinner) {
+  const t = tinfo(name);
+  const cls = ['team-btn', isChamp?'champion-sel':sel?'selected':'', elim?'eliminated':''].filter(Boolean).join(' ');
+  const rtnCls = t.rtn <= 16 ? 'rtn top16' : 'rtn lower';
+  const rtnBadge = t.rtn ? `<span class="${rtnCls}">${t.rtn}</span>` : `<span class="rtn lower">—</span>`;
+  const seedBadge = t.seed ? `<span class="seed">#${t.seed}</span>` : `<span class="seed un"></span>`;
+  const piTag = isPiWinner ? `<span class="pi-tag">PLAY-IN</span>` : '';
+  const nqs = t.nqs ? `<span class="nqs">${t.nqs}</span>` : '';
+  return `<button class="${cls}" onclick="${clickExpr}">
+    ${rtnBadge} ${name}${piTag} ${seedBadge} ${nqs} <span class="chk">✓</span>
+  </button>`;
+}
+
+function mcard(title, sub, body) {
+  return `<div class="matchup-card">
+    <div class="matchup-card-hdr"><div class="dot"></div><div class="lbl">${title}</div>${sub?`<div class="sub">${sub}</div>`:''}</div>
+    <div class="matchup-body">${body}</div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+// RENDER ROUNDS
+// ══════════════════════════════════════════
+function renderR1() {
+  let h='';
+  REGIONALS.forEach(reg=>reg.playins.forEach(pi=>{
+    const w=piWinner(pi.id);
+    const bA=tbtn(pi.a, w===pi.a, w&&w!==pi.a, `pickPi('${pi.id}','${pi.a}')`, false, false);
+    const bB=tbtn(pi.b, w===pi.b, w&&w!==pi.b, `pickPi('${pi.id}','${pi.b}')`, false, false);
+    h+=mcard(`${reg.name} — Play-In`, 'Winner joins quad', bA+bB);
+  }));
+  document.getElementById('grid-r1').innerHTML=h;
+}
+
+function renderR2() {
+  let h='';
+  REGIONALS.forEach(reg=>reg.quads.forEach(q=>{
+    const adv=quadAdvs(q.id), full=adv.length===2;
+    let body=`<div class="pick-n">Pick 2 to advance to Regional Final</div>`;
+    // Regular teams
+    q.teams.forEach(name=>{
+      const sel=adv.includes(name), elim=full&&!sel;
+      body+=tbtn(name, sel, elim, `pickQuad('${q.id}','${name}')`, false, false);
+    });
+    // Play-in slot — no separator, rendered inline
+    if (q.piSlot) {
+      const pw=piWinner(q.piId);
+      if (pw) {
+        const sel=adv.includes(pw), elim=full&&!sel;
+        body+=tbtn(pw, sel, elim, `pickQuad('${q.id}','${pw}')`, false, true);
+      } else {
+        body+=`<div class="tbd">+ Play-In Winner (pick in First Round tab)</div>`;
+      }
+    }
+    h+=mcard(q.label, 'Top 2 advance', body);
+  }));
+  document.getElementById('grid-r2').innerHTML=h;
+}
+
+const byRank = names => [...names].sort((a,b)=>(tinfo(a).rtn||99)-(tinfo(b).rtn||99));
+
+function renderRF() {
+  let h='';
+  REGIONALS.forEach(reg=>{
+    const pool=byRank(rfPool(reg.id)), adv=rfAdvs(reg.id), full=adv.length===2;
+    let body=`<div class="pick-n">Pick 2 to advance to Nationals</div>`;
+    if (!pool.length) { body+=`<div class="tbd">Pick Second Round first</div>`; }
+    else {
+      pool.forEach(name=>{
+        const sel=adv.includes(name), elim=full&&!sel;
+        body+=tbtn(name, sel, elim, `pickRF('${reg.id}','${name}')`, false, false);
+      });
+      for(let i=pool.length;i<4;i++) body+=`<div class="tbd">TBD</div>`;
+    }
+    h+=mcard(`${reg.name} Regional Final`, 'Top 2 → Fort Worth', body);
+  });
+  document.getElementById('grid-rf').innerHTML=h;
+}
+
+function renderSF() {
+  let h='';
+  SF.forEach(sf=>{
+    const adv=sfAdvs(sf.id), full=adv.length===2;
+    const allTeams=byRank(sf.regIds.flatMap(rid=>rfAdvs(rid)));
+    let body=`<div class="pick-n">Pick 2 to advance to Championship</div>`;
+    if (!allTeams.length) { body+=`<div class="tbd">Pick Regional Finals first</div>`; }
+    else {
+      allTeams.forEach(name=>{
+        const sel=adv.includes(name), elim=full&&!sel;
+        body+=tbtn(name, sel, elim, `pickSF('${sf.id}','${name}')`, false, false);
+      });
+      for(let i=allTeams.length;i<4;i++) body+=`<div class="tbd">TBD</div>`;
+    }
+    h+=mcard(sf.label, 'Top 2 → Championship', body);
+  });
+  document.getElementById('grid-sf').innerHTML=h;
+}
+
+function renderNC() {
+  const pool=byRank(natPool()), champ=S.champion;
+  let body=`<div class="pick-n">Pick your champion</div>`;
+  if (!pool.length) { body+=`<div class="tbd">Pick Semifinal advancers first</div>`; }
+  else {
+    pool.forEach(name=>{
+      const sel=champ===name, elim=champ&&!sel;
+      body+=tbtn(name, false, elim, `pickChamp('${name}')`, sel, false);
+    });
+    for(let i=pool.length;i<4;i++) body+=`<div class="tbd">TBD</div>`;
+  }
+  document.getElementById('grid-nc').innerHTML=mcard('National Championship Final','April 18 · ABC',body);
+  document.getElementById('champ-name').textContent=champ||'—';
+  document.getElementById('champ-hint').textContent=champ?'🎉 Champion locked in!':'Pick the winner above';
+}
+
+// ══════════════════════════════════════════
+// BONUS PICKS — perfect 10 predictions
+// ══════════════════════════════════════════
+// Per-apparatus gymnast lists sourced from RTN Week 12 individual standings
+// Filtered to the 36 qualifying teams, ordered by event NQS rank
+// hot:true = scored a 10.0 in the 2026 regular season
+
+const GYMNASTS_BY_APP = {
+
+vault: [
+  {name:'Kailin Chio',team:'LSU',hot:true},
+  {name:'Addison Fatta',team:'Oklahoma',hot:true},
+  {name:'Jordan Chiles',team:'UCLA',hot:true},
+  {name:'Mackenzie Estep',team:'Oklahoma',hot:true},
+  {name:'Sage Kellerman',team:'Michigan St.'},
+  {name:'Keira Wells',team:'Oklahoma'},
+  {name:'Azaraya Ra-Akbar',team:'Alabama'},
+  {name:'Selena Harris-Miranda',team:'Florida'},
+  {name:'Morgan Price',team:'Arkansas',hot:true},
+  {name:'Avery Neff',team:'Utah',hot:true},
+  {name:'Amari Drayton',team:'LSU'},
+  {name:'Makenna Smith',team:'Utah'},
+  {name:'Kaliya Lincoln',team:'LSU'},
+  {name:'Arianna Ostrum',team:'Minnesota',hot:true},
+  {name:'Anna Roberts',team:'Stanford',hot:true},
+  {name:'Ella Zirbes',team:'Utah'},
+  {name:'Lauren Williams',team:'Arkansas'},
+  {name:'Elle Mueller',team:'Oklahoma'},
+  {name:'JoJo Valahovic',team:'North Carolina'},
+  {name:'Hannah Scheible',team:'Oklahoma'},
+  {name:'Paige Zancan',team:'Auburn'},
+  {name:'Danie Ferris',team:'Florida'},
+  {name:'Hannah Horton',team:'Missouri'},
+  {name:'Nyla Aquino',team:'Georgia'},
+  {name:'Maggie Slife',team:'Air Force'},
+  {name:'Ashley Glynn',team:'Utah'},
+  {name:'CaMarah Williams',team:'Georgia',hot:true},
+  {name:'Elizabeth Blessey',team:'Oklahoma'},
+  {name:'Kaya Forbes',team:'North Carolina'},
+  {name:'Jordyn Paradise',team:'Alabama'},
+  {name:'Ady Wahl',team:'Georgia'},
+  {name:'Anna Flynn Cashion',team:'Kentucky'},
+  {name:'Taralyn Nguyen',team:'Stanford'},
+  {name:'Marissa Neal',team:'Auburn'},
+  {name:'Allison Cucci',team:'Arkansas'},
+  {name:'Tara Walsh',team:'Clemson'},
+  {name:"Ja'Free Scott",team:'Georgia'},
+  {name:'Nikki Smith',team:'Michigan St.'},
+  {name:'Olivia Zsarmani',team:'Michigan St.'},
+  {name:'Ashlee Sullivan',team:'UCLA'},
+  {name:'Ava Piedrahita',team:'Penn St.'},
+  {name:'Tiana Sumanasekera',team:'UCLA'},
+  {name:'Avery Moll',team:'Georgia'},
+  {name:'Teryn Crump',team:'Minnesota'},
+  {name:'Kayla Pardue',team:'Southern Utah'},
+  {name:'Syniya Thomas',team:'NC State'},
+  {name:'Jahzara Ranger',team:'Michigan'},
+  {name:'Kimarra Echols',team:'Missouri'},
+  {name:'Lexi Zeiss',team:'LSU'},
+  {name:'Summer Gronski',team:'Stanford'},
+  {name:'Elise Tisler',team:'Missouri'},
+  {name:'Kaviana Jurries',team:'San Jose St.'},
+  {name:'Gabby Gladieux',team:'Alabama'},
+  {name:'MaKayla Tucker',team:'Michigan St.'},
+  {name:'Zoe Johnson',team:'Utah'},
+  {name:'Kayla DiCello',team:'Florida'},
+  {name:'Riley Jenkins',team:'UCLA'},
+  {name:'Ui Soma',team:'Stanford'},
+  {name:'Railey Jackson',team:'Missouri'},
+  {name:'Konnor McClain',team:'LSU'},
+  {name:'JJ Coleman',team:'Ohio St.'},
+  {name:'Victoria Roberts',team:'LSU'},
+  {name:'Cecily Rizo',team:'Kentucky'},
+  {name:'Delaynee Rodriguez',team:'Kentucky'},
+  {name:'Sophia Diaz',team:'Michigan'},
+  {name:'Annalise Newman-Achee',team:'California'},
+  {name:'Olivia Buckner',team:'Oregon St.'},
+  {name:'Julianne Huff',team:'Auburn'},
+  {name:'Shyla Bhatia',team:'Denver'},
+  {name:'Cami Weaver',team:'Arkansas'},
+  {name:'Aurelie Tran',team:'Iowa'},
+  {name:'Ryan Noonan',team:'Kentucky'},
+  {name:'Emily Leese',team:'Rutgers'},
+  {name:'Kyen Mayhew',team:'California'},
+  {name:'JerQuavia Henderson',team:'Iowa'},
+  {name:'Gianna Gerdes',team:'Minnesota'},
+  {name:'Nyla Morabito',team:'Utah St.'},
+  {name:'Mia Leverton',team:'Auburn'},
+  {name:'Sophia Esposito',team:'Oregon St.'},
+  {name:'Katelyn Rosen',team:'UCLA'},
+  {name:'Maddison Reidenbach',team:'Denver'},
+  {name:'Deb Silva',team:'BYU'},
+  {name:'Niya Randolph',team:'Southern Utah'},
+  {name:'Reyna Guggino',team:'Michigan'},
+  {name:'Hailey Klein',team:'Arkansas'},
+  {name:'Gwen Fink',team:'North Carolina'},
+  {name:'Sophie Schriever',team:'Iowa'},
+  {name:'Lia Kmieciak',team:'Central Mich.'},
+  {name:'Casey Brown',team:'California'},
+  {name:'Ava Myers',team:'NC State'},
+  {name:'Gabrielle Dildy',team:'Rutgers'},
+  {name:'Cameron Smith',team:'Ohio St.'},
+  {name:'Mila Brusch',team:'Denver'},
+  {name:'Ava Jordan',team:'Michigan'},
+  {name:'Sarah Moraw',team:'Minnesota'},
+  {name:'Jessa Janicke',team:'Arizona'},
+  {name:'Lauren Wright',team:'NC State'},
+  {name:'Logan Buckmon',team:'Maryland'},
+  {name:'Maggie Holman',team:'Clemson'},
+  {name:'Leah Smith',team:'Arkansas'},
+  {name:'Ava Cash',team:'Penn St.'},
+  {name:'Jasmine Cawley',team:'Alabama'},
+  {name:'Ava Stewart',team:'Minnesota'},
+  {name:'Jessica Johanson',team:'Penn St.'},
+  {name:'Jayden Silvers',team:'California'},
+  {name:'Paige Prejean',team:'North Carolina'},
+  {name:'Kennedy Griffin',team:'Missouri'},
+  {name:'Isabel Sikon',team:'Nebraska'},
+  {name:'Ava Jorgensen',team:'BYU'},
+  {name:'Sydney Seabrooks',team:'North Carolina'},
+  {name:'Kylee Kvamme',team:'Alabama'},
+  {name:'Jamison Sears',team:'Alabama'},
+  {name:'Lilia Purler',team:'Arizona St.'},
+  {name:'Taylor Rech',team:'Maryland'},
+  {name:'Korynne Marquart',team:'Michigan St.'},
+  {name:'Kira Bolden',team:'Washington'},
+  {name:'Brie Clark',team:'Clemson'},
+  {name:'Tegan Shaver',team:'Nebraska'},
+  {name:'McKenzie Matters',team:'Alabama'},
+  {name:'Reese Baechle',team:'Nebraska'},
+  {name:'Scarlett Sonnenberg',team:'BYU'},
+  {name:'Amanda Hargraves',team:'Denver'},
+  {name:'Elliot Bringhurst',team:'Southern Utah'},
+  {name:'Addie Hewitt',team:'Denver'},
+  {name:'Tonya Paulsson',team:'California'},
+  {name:'Peyton Davis',team:'Michigan'},
+  {name:'Jaylyn Pomager',team:'Ohio St.'},
+  {name:'Reagan Schenkel',team:'Rutgers'},
+  {name:'Kaia Tanskanen',team:'Missouri'},
+  {name:'Maddie Hall',team:'NC State'},
+  {name:'Jaydah Battle',team:'Georgia'},
+  {name:'Callie Gardner',team:'Kentucky'},
+  {name:'Kayli Boozer',team:'Michigan'},
+  {name:'Emma Strom',team:'Arizona'},
+  {name:'Rayna Engelmayer',team:'Maryland'},
+  {name:'Lundyn VanderToolen',team:'Utah St.'},
+  {name:'Luciana Alvarado-Reid',team:'Central Mich.'},
+  {name:'Lilly Tubbs',team:'Washington'},
+  {name:'Sydney Turner',team:'Iowa'},
+  {name:'Alyssa Bigler',team:'Air Force'},
+  {name:'Kyanna Crabb',team:'Oregon St.'},
+  {name:'eMjae Frazier',team:'Florida'},
+  {name:'Safia El Mammann',team:'Arizona St.'},
+  {name:'Camryn Richardson',team:'Oregon St.'},
+  {name:'Mackenzie Kelly',team:'Southern Utah'},
+  {name:'Clara Raposo',team:'Utah'},
+  {name:'Autumn Rardin',team:'NC State'},
+  {name:'Devyn Valuch',team:'San Jose St.'},
+  {name:'Daisy Stephenson',team:'BYU'},
+  {name:'Paige Anastasi',team:'Clemson'},
+  {name:'Jaimie Dugan',team:'Stanford'},
+  {name:'Jessica Schaffer',team:'Washington'},
+  {name:'Whitney Jencks',team:'Nebraska'},
+  {name:'Olivia Greaves',team:'Auburn'},
+  {name:'Kristin Lin',team:'Washington'},
+  {name:'Mya Witte',team:'Utah St.'},
+  {name:'Addisyn Hofseth',team:'Kentucky'},
+  {name:'Ana Barbosu',team:'Stanford'},
+  {name:'Emma Slevin',team:'Minnesota'},
+  {name:'Avery Chambers',team:'Iowa'},
+  {name:'Gianna Masella',team:'Iowa'},
+  {name:'Kimberly Smith',team:'Arizona St.'},
+  {name:'Madison Minner',team:'Clemson'},
+  {name:'Ella Cesario',team:'Clemson'},
+  {name:'Karys Griffin',team:'Nebraska'},
+  {name:'Anabelle Dewey',team:'Utah St.'},
+  {name:'Chelsea Southam',team:'Utah St.'},
+  {name:'Caitlin McWilliams',team:'Washington'},
+  {name:'Levi Jung-Ruivivar',team:'Stanford'},
+  {name:'Mary McDonough',team:'Washington'},
+  {name:'Halle Gregoire',team:'Arizona St.'},
+  {name:'Courtney Blackson',team:'LSU'},
+  {name:'Kylee Bromley',team:'Arizona St.'},
+  {name:'Sarah Willis',team:'Air Force'},
+  {name:'Kylee Greene',team:'Air Force'},
+  {name:'Reina Marchal',team:'Oregon St.'},
+  {name:'Payton Pech',team:'Nebraska'},
+  {name:'Skylar Draser',team:'Florida'},
+  {name:'Kylie Eaquinto',team:'BYU'},
+  {name:'Cady Duplissis',team:'Michigan St.'},
+  {name:'Josephine Kogler',team:'Maryland'},
+  {name:'Kaitlyn Grimes',team:'Ohio St.'},
+  {name:'Aine Reade',team:'Maryland'},
+  {name:'Mya Kirkham',team:'BYU'},
+  {name:'Vivienne Larsen',team:'Rutgers'},
+  {name:'Cecilia Cooley',team:'Denver'},
+  {name:'Lisa Chevaire',team:'Rutgers'},
+  {name:'Emerson Fisk',team:'NC State'},
+  {name:'Polina Belanovski',team:'Towson'},
+  {name:'Jocelyn Lannon',team:'Towson'},
+  {name:'Sophia Rice',team:'West Virginia'},
+  {name:'Jordan Barrow',team:'Pennsylvania'},
+  {name:'Sophia Isbell',team:'Texas Women\'s'},
+  {name:'Charlie Behner',team:'Kent State'},
+  {name:'Jersey Bingman',team:'Kent State'},
+  {name:'Taylor Ingle',team:'S.E. Missouri'},
+  {name:'Nova Staruk',team:'Bridgeport'},
+  {name:'Mikaela Pitts',team:'San Jose St.'},
+  {name:'Delanie Kelly',team:'Arizona St.'},
+  {name:'Isabella Minervini',team:'Towson'},
+  {name:'Chloe Cho',team:'Illinois'},
+  {name:'Zoe Middleton',team:'Ball State'},
+  {name:'Amelia Moneymaker',team:'UC Davis'},
+],
+
+bars: [
+  {name:'Chloe LaCoursiere',team:'Alabama'},
+  {name:'Azaraya Ra-Akbar',team:'Alabama',hot:true},
+  {name:'Skye Blakely',team:'Florida'},
+  {name:'Jordan Chiles',team:'UCLA',hot:true},
+  {name:'Riley McCusker',team:'Florida'},
+  {name:'Selena Harris-Miranda',team:'Florida',hot:true},
+  {name:'Tonya Paulsson',team:'California'},
+  {name:'Konnor McClain',team:'LSU'},
+  {name:'Maggie Slife',team:'Air Force'},
+  {name:'Kayla DiCello',team:'Florida'},
+  {name:'Morgan Price',team:'Arkansas'},
+  {name:'Avery Neff',team:'Utah',hot:true},
+  {name:'Ana Padurariu',team:'Utah'},
+  {name:'Kimarra Echols',team:'Missouri'},
+  {name:'Autumn Reingold',team:'Georgia'},
+  {name:'Ella Zirbes',team:'Utah'},
+  {name:'Aurelie Tran',team:'Iowa'},
+  {name:'Sienna Robinson',team:'Stanford'},
+  {name:'Kailin Chio',team:'LSU'},
+  {name:'Jordyn Lyden',team:'Minnesota'},
+  {name:'Sage Kellerman',team:'Michigan St.'},
+  {name:'Anna Roberts',team:'Stanford'},
+  {name:'Addison Fatta',team:'Oklahoma'},
+  {name:'Lily Smith',team:'Georgia'},
+  {name:'Mackenzie Estep',team:'Oklahoma'},
+  {name:'Hannah Horton',team:'Missouri'},
+  {name:'Ella Murphy',team:'Oklahoma'},
+  {name:'Ui Soma',team:'Stanford'},
+  {name:'Faith Torrez',team:'Oklahoma'},
+  {name:'eMjae Frazier',team:'Florida'},
+  {name:'Lia Kmieciak',team:'Central Mich.'},
+  {name:'Levi Jung-Ruivivar',team:'Stanford'},
+  {name:'Delaynee Rodriguez',team:'Kentucky'},
+  {name:'Madison Ulrich',team:'LSU'},
+  {name:'Emma Slevin',team:'Minnesota'},
+  {name:'Anya Pilgrim',team:'Florida'},
+  {name:"Ja'Free Scott",team:'Georgia'},
+  {name:'Kelise Woolford',team:'Georgia'},
+  {name:'Carly Bauman',team:'Michigan'},
+  {name:'Courtney Blackson',team:'LSU'},
+  {name:'Hannah Scheible',team:'Oklahoma'},
+  {name:'Dani Latronica',team:'Penn St.'},
+  {name:'Elle Hadrick',team:'NC State'},
+  {name:'Lilly Tubbs',team:'Washington'},
+  {name:'Ava Cash',team:'Penn St.'},
+  {name:'Ashley Cowan',team:'LSU'},
+  {name:'Luciana Alvarado-Reid',team:'Central Mich.'},
+  {name:'Ashlee Sullivan',team:'UCLA'},
+  {name:'Whitney Jencks',team:'Nebraska'},
+  {name:'Lily Pederson',team:'Oklahoma'},
+  {name:'Annalise Newman-Achee',team:'California'},
+  {name:'Ryan Fuller',team:'Alabama'},
+  {name:'Nikki Smith',team:'Michigan St.'},
+  {name:'Natalia Pawlak',team:'Alabama'},
+  {name:'Ellie Weaver',team:'Oregon St.'},
+  {name:'Maiya Terry',team:'Missouri'},
+  {name:'Alex Irvine',team:'Auburn'},
+  {name:'Nola Matthews',team:'UCLA'},
+  {name:'Sydney Barros',team:'UCLA'},
+  {name:'Sage Melkonian',team:'California'},
+  {name:'Daisy Bowles',team:'Iowa'},
+  {name:'Lexi Zeiss',team:'LSU'},
+  {name:'Casey Brown',team:'California'},
+  {name:'Niya Randolph',team:'Southern Utah'},
+  {name:'Paityn Walker',team:'Alabama'},
+  {name:'Caroline Volk',team:'NC State'},
+  {name:'Leah Smith',team:'Arkansas'},
+  {name:'Ava Piedrahita',team:'Penn St.'},
+  {name:'Makenna Smith',team:'Utah'},
+  {name:'Gianna Masella',team:'Iowa'},
+  {name:'Lilly Lippeatt',team:'Clemson'},
+  {name:'Gabby Gladieux',team:'Alabama'},
+  {name:'Ella Cesario',team:'Clemson'},
+  {name:'Olivia Kelly',team:'Missouri'},
+  {name:'Gwen Fink',team:'North Carolina'},
+  {name:'Elizabeth Leary',team:'Penn St.'},
+  {name:'MaKayla Tucker',team:'Michigan St.'},
+  {name:'Ana Barbosu',team:'Stanford'},
+  {name:'Hannah Clark',team:'Clemson'},
+  {name:'Csenge Bacskay',team:'Georgia'},
+  {name:'Kimberly Smith',team:'Arizona St.'},
+  {name:'Abbi Ryssman',team:'Utah'},
+  {name:'Cecilia Cooley',team:'Denver'},
+  {name:'Samantha Macasu',team:'San Jose St.'},
+  {name:'Katie Harper',team:'NC State'},
+  {name:'Emma Malewski',team:'Clemson'},
+  {name:'Ava Jorgensen',team:'BYU'},
+  {name:'Sophia Diaz',team:'Michigan'},
+  {name:'Tiana Sumanasekera',team:'UCLA'},
+  {name:'Paige Prejean',team:'North Carolina'},
+  {name:'Ryan Noonan',team:'Kentucky'},
+  {name:'Myli Lew',team:'Michigan'},
+  {name:'Joscelyn Roberson',team:'Arkansas'},
+  {name:'Lundyn VanderToolen',team:'Utah St.'},
+  {name:'Hailey Klein',team:'Arkansas'},
+  {name:'Madeline Reid',team:'NC State'},
+  {name:'Quinn Kuhl',team:'Clemson'},
+  {name:'Molly Peterson',team:'Nebraska'},
+  {name:'Mya Wiley',team:'California'},
+  {name:'Kiley Rorich',team:'Denver'},
+  {name:'Mika Webster-Longin',team:'UCLA'},
+  {name:'Lacie Saltzmann',team:'Minnesota'},
+  {name:'Miki Aderinto',team:'California'},
+  {name:'Kendall Abney',team:'Michigan St.'},
+  {name:'Olivia Orengo',team:'Utah St.'},
+  {name:'Allison Cucci',team:'Arkansas'},
+  {name:'Gabrielle Dildy',team:'Rutgers'},
+  {name:'Sophie Schriever',team:'Iowa'},
+  {name:'Sophia Esposito',team:'Oregon St.'},
+  {name:'Tory Vetter',team:'Ohio St.'},
+  {name:'Makayla Green',team:'Missouri'},
+  {name:'Camryn Richardson',team:'Oregon St.'},
+  {name:'Gianna Gerdes',team:'Minnesota'},
+  {name:'Alilah Alvarado',team:'BYU'},
+  {name:'Ava Myers',team:'NC State'},
+  {name:'Emma Grace Boyd',team:'Auburn'},
+  {name:'Ava Sorrento',team:'Stanford'},
+  {name:'Deiah Moody',team:'Washington'},
+  {name:'Delaney Adrian',team:'Rutgers'},
+  {name:'Ava Jordan',team:'Michigan'},
+  {name:'Deb Silva',team:'BYU'},
+  {name:'Reagan Schenkel',team:'Rutgers'},
+  {name:'Reese Grolla',team:'Arizona St.'},
+  {name:'Aubrey Krohnfeldt',team:'Arizona'},
+  {name:'Chesney Bennett',team:'Kentucky'},
+  {name:'Kylie Eaquinto',team:'BYU'},
+  {name:'Ady Wahl',team:'Georgia'},
+  {name:'Nya Kraus',team:'Nebraska'},
+  {name:'Sydney Jelen',team:'Utah St.'},
+  {name:'Ariel Collum',team:'Southern Utah'},
+  {name:'Sydney Turner',team:'Iowa'},
+  {name:'Kaitlyn Schwab',team:'Central Mich.'},
+  {name:'Lauren Macpherson',team:'Missouri'},
+  {name:'Ciena Alipio',team:'UCLA'},
+  {name:'Kylee Bromley',team:'Arizona St.'},
+  {name:'Mia Hampton',team:'Southern Utah'},
+  {name:'Kylee Greene',team:'Air Force'},
+  {name:'Avery Bibbey',team:'Utah St.'},
+  {name:'Sophie Derr',team:'Arizona'},
+  {name:'Gabby Van Frayen',team:'Kentucky'},
+  {name:'Anna Pearl Stanley',team:'North Carolina'},
+  {name:'Sophie Parenti',team:'Michigan'},
+  {name:'Madeline Komoroski',team:'Maryland'},
+  {name:'Mila Brusch',team:'Denver'},
+  {name:'Lilia Cosman',team:'Michigan St.'},
+  {name:'Mary McDonough',team:'Washington'},
+  {name:'Olivia Greaves',team:'Auburn'},
+  {name:'Lily Clapper',team:'Michigan'},
+  {name:'Shyla Bhatia',team:'Denver'},
+  {name:'Francesca Caso',team:'Oregon St.'},
+  {name:'Ava Wellmeier',team:'Central Mich.'},
+  {name:'Ellie Monahan',team:'Penn St.'},
+  {name:'Julianne Huff',team:'Auburn'},
+  {name:'Kaviana Jurries',team:'San Jose St.'},
+  {name:'Ava Jackson',team:'Ohio St.'},
+  {name:'Camryn Rueda',team:'North Carolina'},
+  {name:'Gianna Ruffing',team:'Maryland'},
+  {name:'Isabel Sikon',team:'Nebraska'},
+  {name:'Aine Reade',team:'Maryland'},
+  {name:'Avalon Campbell',team:'Arkansas'},
+  {name:'Teryn Crump',team:'Minnesota'},
+  {name:'Cecily Rizo',team:'Kentucky'},
+  {name:'JerQuavia Henderson',team:'Iowa'},
+  {name:'Katelyn Jong',team:'Auburn'},
+  {name:'Savannah Miller',team:'Oregon St.'},
+  {name:'Sabrina Nemcek',team:'Kentucky'},
+  {name:'Sydney Seabrooks',team:'North Carolina'},
+  {name:'Alyssa Bigler',team:'Air Force'},
+  {name:'Addilyn Glazier',team:'BYU'},
+  {name:'Olivia Burns',team:'Nebraska'},
+  {name:'Devyn Valuch',team:'San Jose St.'},
+  {name:'Emerson Fisk',team:'NC State'},
+  {name:'Jaylyn Pomager',team:'Ohio St.'},
+  {name:'Arianna Ostrum',team:'Minnesota'},
+  {name:'Kaylee Cheek',team:'Oregon St.'},
+  {name:'Mya Kirkham',team:'BYU'},
+  {name:'Genesis PeBenito',team:'San Jose St.'},
+  {name:'Clara Raposo',team:'Utah'},
+  {name:'Kristin Lin',team:'Washington'},
+  {name:'Rylee Miller',team:'Southern Utah'},
+  {name:'Camryn Chiu',team:'Pittsburgh'},
+  {name:'Hallie Copperwheat',team:'Pittsburgh'},
+  {name:'Jaime Pratt',team:'Pittsburgh'},
+  {name:'Reese Samuelson',team:'Western Michigan'},
+  {name:'Lola Montevago',team:'George Washington'},
+  {name:'Mary Rose Bellan',team:'Ball State'},
+  {name:'Lyden Saltness',team:'Illinois'},
+  {name:'Ashley Szymanski',team:'Ball State'},
+  {name:'Kristina Shchennikova',team:'Boise State'},
+  {name:'Mahleea Werline',team:'Boise State'},
+  {name:'Olivia Zsarmani',team:'Michigan St.'},
+  {name:'Isabella Minervini',team:'Towson'},
+  {name:'Abigayle Martin',team:'Arizona'},
+  {name:'Chloe Cho',team:'Illinois'},
+  {name:'Zoe Middleton',team:'Ball State'},
+  {name:'Amelia Moneymaker',team:'UC Davis'},
+],
+
+beam: [
+  {name:'Kailin Chio',team:'LSU',hot:true},
+  {name:'Selena Harris-Miranda',team:'Florida',hot:true},
+  {name:'Faith Torrez',team:'Oklahoma',hot:true},
+  {name:'Jordan Chiles',team:'UCLA'},
+  {name:'Ciena Alipio',team:'UCLA'},
+  {name:'Kayla DiCello',team:'Florida'},
+  {name:'Joscelyn Roberson',team:'Arkansas'},
+  {name:'Ella Murphy',team:'Oklahoma'},
+  {name:'Addison Lawrence',team:'Missouri'},
+  {name:'Kelise Woolford',team:'Georgia'},
+  {name:'Konnor McClain',team:'LSU'},
+  {name:'Avery Neff',team:'Utah'},
+  {name:'Anna Roberts',team:'Stanford'},
+  {name:'Kylee Kvamme',team:'Alabama'},
+  {name:'Kayli Boozer',team:'Michigan'},
+  {name:'Skye Blakely',team:'Florida',hot:true},
+  {name:'Amari Drayton',team:'LSU'},
+  {name:'Tiana Sumanasekera',team:'UCLA'},
+  {name:'Keira Wells',team:'Oklahoma'},
+  {name:'Sienna Robinson',team:'Stanford'},
+  {name:'Camie Winger',team:'Utah'},
+  {name:'Delaynee Rodriguez',team:'Kentucky'},
+  {name:'Cecilia Cooley',team:'Denver'},
+  {name:'Jordyn Lyden',team:'Minnesota'},
+  {name:'Ana Barbosu',team:'Stanford'},
+  {name:'Dani Latronica',team:'Penn St.'},
+  {name:'eMjae Frazier',team:'Florida'},
+  {name:'Addison Fatta',team:'Oklahoma'},
+  {name:'CaMarah Williams',team:'Georgia'},
+  {name:'Kaliya Lincoln',team:'LSU'},
+  {name:'Annalise Newman-Achee',team:'California'},
+  {name:"Ja'Free Scott",team:'Georgia'},
+  {name:'Elle Mueller',team:'Oklahoma'},
+  {name:'Lauren Macpherson',team:'Missouri'},
+  {name:'Chloe LaCoursiere',team:'Alabama'},
+  {name:'Brynlee Andersen-Broekman',team:'BYU'},
+  {name:'Tory Vetter',team:'Ohio St.'},
+  {name:'Maggie Slife',team:'Air Force'},
+  {name:'Jahzara Ranger',team:'Michigan'},
+  {name:'Abbi Ryssman',team:'Utah'},
+  {name:'Marissa Neal',team:'Auburn'},
+  {name:'Sarah Moraw',team:'Minnesota'},
+  {name:'Abigayle Martin',team:'Arizona'},
+  {name:'Temple Landry',team:'Stanford'},
+  {name:'Brooklyn Rowray',team:'Minnesota'},
+  {name:'JoJo Valahovic',team:'North Carolina'},
+  {name:'Railey Jackson',team:'Missouri'},
+  {name:'Carly Bauman',team:'Michigan'},
+  {name:'Alyssa Arana',team:'Florida'},
+  {name:'Chelsea Hallinan',team:'Washington'},
+  {name:'Sydney Turner',team:'Iowa'},
+  {name:'Alex Irvine',team:'Auburn'},
+  {name:'Quincy Walters',team:'Michigan'},
+  {name:'Gabby Gladieux',team:'Alabama'},
+  {name:'Sarah Lee',team:'California'},
+  {name:'Alyssa Bigler',team:'Air Force'},
+  {name:'MaKayla Tucker',team:'Michigan St.'},
+  {name:'Olivia Kelly',team:'Missouri'},
+  {name:'Nikki Smith',team:'Michigan St.'},
+  {name:'Ana Padurariu',team:'Utah'},
+  {name:'Gabby Ladanyi',team:'Alabama'},
+  {name:'Claire Dean',team:'Stanford'},
+  {name:'Lily Pederson',team:'Oklahoma'},
+  {name:'Lauren Pearl',team:'Minnesota'},
+  {name:'Julianne Huff',team:'Auburn'},
+  {name:'Madeline Komoroski',team:'Maryland'},
+  {name:'Allison Cucci',team:'Arkansas'},
+  {name:'Arianna Ostrum',team:'Minnesota'},
+  {name:'Gwen Fink',team:'North Carolina'},
+  {name:'Jessica Naranjo',team:'North Carolina'},
+  {name:'Lilly Tubbs',team:'Washington'},
+  {name:'Jasmine Cawley',team:'Alabama'},
+  {name:'Mia Hampton',team:'Southern Utah'},
+  {name:'Lilia Cosman',team:'Michigan St.'},
+  {name:'Harley Tomlin',team:'Georgia'},
+  {name:'Lauren Letzsch',team:'Oregon St.'},
+  {name:'Syniya Thomas',team:'NC State'},
+  {name:'Elizabeth Gantner',team:'Utah'},
+  {name:'Morgan Price',team:'Arkansas'},
+  {name:'Chesney Bennett',team:'Kentucky'},
+  {name:'Amy Wier',team:'Missouri'},
+  {name:'Katelyn Rosen',team:'UCLA'},
+  {name:'Creslyn Brose',team:'Kentucky'},
+  {name:'Skylar Draser',team:'Florida'},
+  {name:'Sydney Barros',team:'UCLA'},
+  {name:'Tonya Paulsson',team:'California'},
+  {name:'Adasyn Tackett',team:'NC State'},
+  {name:'Aurelie Tran',team:'Iowa'},
+  {name:'Sydney Jelen',team:'Utah St.'},
+  {name:'Tara Walsh',team:'Clemson'},
+  {name:'Natalie Martin',team:'Ohio St.'},
+  {name:'Mya Witte',team:'Utah St.'},
+  {name:'Hailey Klein',team:'Arkansas'},
+  {name:'Kylie Coen',team:'LSU'},
+  {name:'Deiah Moody',team:'Washington'},
+  {name:'Rylee Miller',team:'Southern Utah'},
+  {name:'Josephine Kogler',team:'Maryland'},
+  {name:'Olivia Ahern',team:'Auburn'},
+  {name:'Brie Clark',team:'Clemson'},
+  {name:'Sophie Parenti',team:'Michigan'},
+  {name:'Tirzah Wise',team:'Arizona'},
+  {name:'Lexi Zeiss',team:'LSU'},
+  {name:'Priscilla Park',team:'Arkansas'},
+  {name:'Luciana Alvarado-Reid',team:'Central Mich.'},
+  {name:'Emily DeFrees',team:'Maryland'},
+  {name:'Cami Weaver',team:'Arkansas'},
+  {name:'Sophie Patterson',team:'San Jose St.'},
+  {name:'Ryan Fuller',team:'Alabama'},
+  {name:'Miki Aderinto',team:'California'},
+  {name:'Lilly Lippeatt',team:'Clemson'},
+  {name:'Gabby Van Frayen',team:'Kentucky'},
+  {name:'Niya Randolph',team:'Southern Utah'},
+  {name:'Scarlett Sonnenberg',team:'BYU'},
+  {name:'Kaylee Cheek',team:'Oregon St.'},
+  {name:'Ella Cesario',team:'Clemson'},
+  {name:'Alilah Alvarado',team:'BYU'},
+  {name:'Kalea McElligott',team:'Penn St.'},
+  {name:'Kristin Lin',team:'Washington'},
+  {name:'Sydney Seabrooks',team:'North Carolina'},
+  {name:'Maddie Hall',team:'NC State'},
+  {name:'Ashley Maul',team:'Penn St.'},
+  {name:'Ava Stewart',team:'Minnesota'},
+  {name:'Kendall Abney',team:'Michigan St.'},
+  {name:'Sophia Esposito',team:'Oregon St.'},
+  {name:'Rylee Guevara',team:'Ohio St.'},
+  {name:'Isabella Trostel',team:'Michigan St.'},
+  {name:'Sophie Schriever',team:'Iowa'},
+  {name:'Quinn Kuhl',team:'Clemson'},
+  {name:'Delaney Adrian',team:'Rutgers'},
+  {name:'Levi Jung-Ruivivar',team:'Stanford'},
+  {name:'Megan Aamold',team:'Denver'},
+  {name:'Ava Jackson',team:'Ohio St.'},
+  {name:'Olivia Orengo',team:'Utah St.'},
+  {name:'Autumn Rardin',team:'NC State'},
+  {name:'Emma Malewski',team:'Clemson'},
+  {name:'Emma Nipper',team:'Southern Utah'},
+  {name:'Madison Gustitus',team:'Arkansas'},
+  {name:'Nya Kraus',team:'Nebraska'},
+  {name:'Gabrielle Dildy',team:'Rutgers'},
+  {name:'Genesis PeBenito',team:'San Jose St.'},
+  {name:'Daisy Stephenson',team:'BYU'},
+  {name:'Kira Bolden',team:'Washington'},
+  {name:'Madison Minner',team:'Clemson'},
+  {name:'Mika Webster-Longin',team:'UCLA'},
+  {name:'Olivia Oppegard',team:'Washington'},
+  {name:'Ava Jordan',team:'Michigan'},
+  {name:'Maggie Ball',team:'Iowa'},
+  {name:'Mia Heather',team:'Oregon St.'},
+  {name:'Kylee Greene',team:'Air Force'},
+  {name:'Olivia Burns',team:'Nebraska'},
+  {name:'Sage Melkonian',team:'California'},
+  {name:'Olivia Buckner',team:'Oregon St.'},
+  {name:'Ellie Weaver',team:'Oregon St.'},
+  {name:'Katie Harper',team:'NC State'},
+  {name:'Reese Grolla',team:'Arizona St.'},
+  {name:'Kayla Lee',team:'Arizona St.'},
+  {name:'Lily Smith',team:'Georgia',hot:true},
+  {name:'Mady Harvey',team:'New Hampshire'},
+  {name:'Amber Lowe',team:'West Virginia'},
+  {name:'Celia Trotter',team:'Towson'},
+  {name:'Summer Clancy',team:'Illinois'},
+  {name:'Delaney McMahon',team:'Ball State'},
+  {name:'Heidi Schultz',team:'Kent State'},
+  {name:'Kaitlyn Driessen',team:'Sacramento State'},
+  {name:'Sydney Kho',team:'Boise State'},
+  {name:'Cameron Smith',team:'Ohio St.'},
+  {name:'Isabella Minervini',team:'Towson'},
+  {name:'Whitney Jencks',team:'Nebraska'},
+  {name:'Chloe Cho',team:'Illinois'},
+  {name:'Zoe Middleton',team:'Ball State'},
+  {name:'Amelia Moneymaker',team:'UC Davis'},
+],
+
+floor: [
+  {name:'Jordan Chiles',team:'UCLA',hot:true},
+  {name:'CaMarah Williams',team:'Georgia',hot:true},
+  {name:'Kaliya Lincoln',team:'LSU',hot:true},
+  {name:'Lily Smith',team:'Georgia',hot:true},
+  {name:'Kailin Chio',team:'LSU',hot:true},
+  {name:'Gabby Gladieux',team:'Alabama',hot:true},
+  {name:'Nikki Smith',team:'Michigan St.',hot:true},
+  {name:'Brie Clark',team:'Clemson'},
+  {name:'Anna Roberts',team:'Stanford',hot:true},
+  {name:'Sydney Seabrooks',team:'North Carolina'},
+  {name:'Makenna Smith',team:'Utah'},
+  {name:'Azaraya Ra-Akbar',team:'Alabama'},
+  {name:'Mackenzie Estep',team:'Oklahoma'},
+  {name:'Ella Zirbes',team:'Utah'},
+  {name:'Carly Bauman',team:'Michigan'},
+  {name:'JJ Coleman',team:'Ohio St.',hot:true},
+  {name:'Creslyn Brose',team:'Kentucky'},
+  {name:'Jamison Sears',team:'Alabama'},
+  {name:'Addison Fatta',team:'Oklahoma'},
+  {name:'Ashlee Sullivan',team:'UCLA'},
+  {name:'Cecilia Cooley',team:'Denver'},
+  {name:'Elle Mueller',team:'Oklahoma'},
+  {name:'Hannah Horton',team:'Missouri'},
+  {name:'Skye Blakely',team:'Florida'},
+  {name:'MaKayla Tucker',team:'Michigan St.'},
+  {name:'Nyla Aquino',team:'Georgia'},
+  {name:'Emma Strom',team:'Arizona'},
+  {name:'Kennedy Griffin',team:'Missouri'},
+  {name:'Selena Harris-Miranda',team:'Florida'},
+  {name:'Amari Drayton',team:'LSU'},
+  {name:'Ana Barbosu',team:'Stanford'},
+  {name:'Arianna Ostrum',team:'Minnesota'},
+  {name:'Kamila Pawlak',team:'Oklahoma'},
+  {name:'Kylie Coen',team:'LSU'},
+  {name:'Tonya Paulsson',team:'California'},
+  {name:'Gabrielle Dildy',team:'Rutgers'},
+  {name:'Sophia Esposito',team:'Oregon St.'},
+  {name:'Sophia Diaz',team:'Michigan'},
+  {name:'Lauren Williams',team:'Arkansas'},
+  {name:'eMjae Frazier',team:'Florida'},
+  {name:'Joscelyn Roberson',team:'Arkansas'},
+  {name:'Avery Neff',team:'Utah'},
+  {name:'Harley Tomlin',team:'Georgia'},
+  {name:'Kaia Tanskanen',team:'Missouri'},
+  {name:'Jordyn Lyden',team:'Minnesota'},
+  {name:'Levi Jung-Ruivivar',team:'Stanford'},
+  {name:'Tiana Sumanasekera',team:'UCLA'},
+  {name:'Julianne Huff',team:'Auburn'},
+  {name:'Ady Wahl',team:'Georgia'},
+  {name:'Ella Murphy',team:'Oklahoma'},
+  {name:'Aine Reade',team:'Maryland'},
+  {name:'Jahzara Ranger',team:'Michigan'},
+  {name:'Chloe LaCoursiere',team:'Alabama'},
+  {name:'Delaynee Rodriguez',team:'Kentucky'},
+  {name:'Syniya Thomas',team:'NC State'},
+  {name:'Marissa Neal',team:'Auburn'},
+  {name:'Maggie Slife',team:'Air Force'},
+  {name:'Emily Leese',team:'Rutgers'},
+  {name:'Quincy Walters',team:'Michigan'},
+  {name:'Alyssa Bigler',team:'Air Force'},
+  {name:'Gabby Ladanyi',team:'Alabama'},
+  {name:'Claire Dean',team:'Stanford'},
+  {name:'Lily Pederson',team:'Oklahoma'},
+  {name:'Madeline Komoroski',team:'Maryland'},
+  {name:'Allison Cucci',team:'Arkansas'},
+  {name:'McKenzie Matters',team:'Alabama'},
+  {name:'Rachel Rybicki',team:'Alabama'},
+  {name:'Olivia Greaves',team:'Auburn'},
+  {name:'Sage Curtis',team:'Utah'},
+  {name:'Autumn Rardin',team:'NC State'},
+  {name:'JerQuavia Henderson',team:'Iowa'},
+  {name:'Sophie Schriever',team:'Iowa'},
+  {name:'Isabella Vater',team:'Utah St.'},
+  {name:'Tara Walsh',team:'Clemson'},
+  {name:'Ella Cesario',team:'Clemson'},
+  {name:'Sienna Robinson',team:'Stanford'},
+  {name:'Ayla Acevedo',team:'Missouri'},
+  {name:'Brynlee Andersen-Broekman',team:'BYU'},
+  {name:'Caitlin McWilliams',team:'Washington'},
+  {name:'Jessica Naranjo',team:'North Carolina'},
+  {name:'Alyssa Kramer',team:'Penn St.'},
+  {name:'Deb Silva',team:'BYU'},
+  {name:'Kylee Greene',team:'Air Force'},
+  {name:'Amanda Hargraves',team:'Denver'},
+  {name:'Lacie Saltzmann',team:'Minnesota'},
+  {name:'Kalea McElligott',team:'Penn St.'},
+  {name:'Savannah Miller',team:'Oregon St.'},
+  {name:'Railey Jackson',team:'Missouri'},
+  {name:'Amelia Disidore',team:'Florida'},
+  {name:'Peyton Davis',team:'Michigan'},
+  {name:'Lauren Homecillo',team:'Nebraska'},
+  {name:'Cady Duplissis',team:'Michigan St.'},
+  {name:'Daisy Stephenson',team:'BYU'},
+  {name:'Eryn Williams',team:'Georgia'},
+  {name:'Rylee Guevara',team:'Ohio St.'},
+  {name:'Taralyn Nguyen',team:'Stanford'},
+  {name:'Kaya Forbes',team:'North Carolina'},
+  {name:'Jasmine Cawley',team:'Alabama'},
+  {name:'Halle Gregoire',team:'Arizona St.'},
+  {name:'Kaitlyn Grimes',team:'Ohio St.'},
+  {name:'Baylie Belman',team:'Ohio St.'},
+  {name:'Kristin Lin',team:'Washington'},
+  {name:'Olivia Ahern',team:'Auburn'},
+  {name:'Aurelie Tran',team:'Iowa'},
+  {name:'Maggie Holman',team:'Clemson'},
+  {name:'Callie Gardner',team:'Kentucky'},
+  {name:'Mara Gruber',team:'Utah St.'},
+  {name:'Kaylee Larson',team:'San Jose St.'},
+  {name:'Reina Marchal',team:'Oregon St.'},
+  {name:'Annalise Newman-Achee',team:'California'},
+  {name:'Ciena Alipio',team:'UCLA'},
+  {name:'Scarlett Sonnenberg',team:'BYU'},
+  {name:'Mia Hampton',team:'Southern Utah'},
+  {name:'Emily DeFrees',team:'Maryland'},
+  {name:'Jayden Silvers',team:'California'},
+  {name:'Delanie Kelly',team:'Arizona St.'},
+  {name:'Chesney Bennett',team:'Kentucky'},
+  {name:'Hailey Klein',team:'Arkansas'},
+  {name:'Korynne Marquart',team:'Michigan St.'},
+  {name:'Nyla Morabito',team:'Utah St.'},
+  {name:'Sophie Derr',team:'Arizona'},
+  {name:'Taylor Rech',team:'Maryland'},
+  {name:'Delaney Adrian',team:'Rutgers'},
+  {name:'Whitney Jencks',team:'Nebraska'},
+  {name:'Josephine Kogler',team:'Maryland'},
+  {name:'Kira Bolden',team:'Washington'},
+  {name:'Sydney Turner',team:'Iowa'},
+  {name:'Elizabeth Leary',team:'Penn St.'},
+  {name:'Ava Johnson',team:'San Jose St.'},
+  {name:'Rylee Miller',team:'Southern Utah'},
+  {name:'Abigayle Martin',team:'Arizona'},
+  {name:'Katelyn Rosen',team:'UCLA'},
+  {name:'Sophie Parenti',team:'Michigan'},
+  {name:'Sarah Willis',team:'Air Force'},
+  {name:'Kaviana Jurries',team:'San Jose St.'},
+  {name:'Gwen Fink',team:'North Carolina'},
+  {name:'Berlin Hall',team:'Southern Utah'},
+  {name:'Isabella DeCroo',team:'Towson'},
+  {name:'Adriana Hoffman',team:'Towson'},
+  {name:'McCall McMullen',team:'New Hampshire'},
+  {name:'Emerson Smith',team:'West Virginia'},
+  {name:'Manama Fofana',team:'Pennsylvania'},
+  {name:'Kyleigh Ghanbari',team:'Texas Women\'s'},
+  {name:'Sophie Hernandez',team:'Texas Women\'s'},
+  {name:'Deana Sheremeta',team:'George Washington'},
+  {name:'Chloe Cho',team:'Illinois'},
+  {name:'Zoe Middleton',team:'Ball State'},
+  {name:'Sophia Dewar',team:'Brown'},
+  {name:'Eden King',team:'Illinois'},
+  {name:'Ava Molina',team:'Ball State'},
+  {name:'Abby Royer',team:'Southern Conn.'},
+  {name:'Amelia Moneymaker',team:'UC Davis'},
+  {name:'Cameron Smith',team:'Ohio St.'},
+  {name:'Mika Webster-Longin',team:'UCLA'},
+  {name:'Isabella Minervini',team:'Towson'},
+],
+
+};
+
+
+const BONUS_APPARATUSES = [
+  { id:'vault', label:'Vault',         icon:'🤸‍♀️' },
+  { id:'bars',  label:'Uneven Bars',   icon:'🏅' },
+  { id:'beam',  label:'Balance Beam',  icon:'⚖️'  },
+  { id:'floor', label:'Floor Exercise',icon:'✨'  },
+];
+
+const MAX_BONUS_PICKS = 5;
+
+function getBonusPicks(appId) {
+  return S['bx_'+appId] ? [...S['bx_'+appId]] : [];
+}
+
+function addBonusPick(appId, gymnast) {
+  const key = 'bx_'+appId;
+  let picks = S[key] ? [...S[key]] : [];
+  // gymnast is {name, team}
+  if (picks.length >= MAX_BONUS_PICKS) return;
+  if (picks.some(p => p.name === gymnast.name && p.team === gymnast.team)) return;
+  picks.push(gymnast);
+  S[key] = picks;
+  save();
+  renderBX();
+}
+
+function removeBonusPick(appId, name) {
+  const key = 'bx_'+appId;
+  S[key] = (S[key] || []).filter(p => (typeof p === 'string' ? p : p.name) !== name);
+  save();
+  renderBX();
+}
+
+// Migrate old string-based picks to {name,team} objects
+function migrateBonusPicks() {
+  BONUS_APPARATUSES.forEach(app => {
+    const key = 'bx_'+app.id;
+    if (!S[key]) return;
+    const gymnasts = GYMNASTS_BY_APP[app.id] || [];
+    S[key] = S[key].map(p => {
+      if (typeof p === 'string') {
+        const found = gymnasts.find(g => g.name === p);
+        return found ? {name: found.name, team: found.team} : {name: p, team: ''};
+      }
+      return p;
+    });
+  });
+}
+
+function getBonusPickName(p) { return typeof p === 'string' ? p : p.name; }
+function getBonusPickTeam(p) { return typeof p === 'string' ? '' : (p.team || ''); }
+
+function renderBX() {
+  migrateBonusPicks();
+  const grid = document.getElementById('bx-grid');
+  grid.innerHTML = BONUS_APPARATUSES.map(app => {
+    const picks = getBonusPicks(app.id);
+    const full = picks.length >= MAX_BONUS_PICKS;
+    const counterCls = full ? 'bx-counter full' : 'bx-counter';
+
+    // Selected picks as chips
+    const chips = picks.map(p => {
+      const n = getBonusPickName(p), t = getBonusPickTeam(p);
+      return `<div class="bx-chip">
+        <span class="bx-chip-name">${n}</span>
+        <span class="bx-chip-team">${t}</span>
+        <button class="bx-chip-remove" onclick="removeBonusPick('${app.id}','${n.replace(/'/g,"\\'")}')">✕</button>
+      </div>`;
+    }).join('');
+
+    const inputId = `bx-input-${app.id}`;
+    const dropId  = `bx-drop-${app.id}`;
+
+    return `<div class="bx-card">
+      <div class="bx-card-hdr">
+        <span>${app.icon}</span>
+        <span class="bx-apparatus">${app.label}</span>
+        <span class="${counterCls}">${picks.length}/${MAX_BONUS_PICKS}</span>
+      </div>
+      <div class="bx-body">
+        ${chips ? `<div class="bx-chips">${chips}</div>` : ''}
+        ${!full ? `
+          <div class="bx-search-wrap">
+            <input class="bx-search-input" id="${inputId}" type="text"
+              placeholder="Search gymnast name…"
+              oninput="bxSearch('${app.id}')"
+              onkeydown="bxKeydown(event,'${app.id}')"
+              autocomplete="off">
+            <div class="bx-dropdown" id="${dropId}" style="display:none"></div>
+          </div>` : `<div class="bx-full-msg">5 picks selected — remove one to change</div>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+let bxActiveIdx = {};
+
+function bxSearch(appId) {
+  const inputEl = document.getElementById(`bx-input-${appId}`);
+  const dropEl  = document.getElementById(`bx-drop-${appId}`);
+  const q = inputEl.value.trim().toLowerCase();
+  bxActiveIdx[appId] = -1;
+
+  if (q.length < 1) { dropEl.style.display = 'none'; return; }
+
+  const picks = getBonusPicks(appId);
+  const pickedNames = new Set(picks.map(getBonusPickName));
+
+  const gymnasts = GYMNASTS_BY_APP[appId] || [];
+  // Filter and rank: prefer name starts-with, then contains
+  const results = gymnasts
+    .filter(g => !pickedNames.has(g.name) &&
+      (g.name.toLowerCase().includes(q) || g.team.toLowerCase().includes(q)))
+    .sort((a, b) => {
+      const aStart = a.name.toLowerCase().startsWith(q) ? 0 : 1;
+      const bStart = b.name.toLowerCase().startsWith(q) ? 0 : 1;
+      return aStart - bStart || a.name.localeCompare(b.name);
+    })
+    .slice(0, 8);
+
+  // Also offer free-text entry if no exact match
+  const exactMatch = (GYMNASTS_BY_APP[appId] || []).some(g => g.name.toLowerCase() === q);
+  const customOption = !exactMatch && q.length >= 2
+    ? `<div class="bx-drop-item bx-drop-custom" onclick="addBonusPick('${appId}', {name:'${inputEl.value.trim().replace(/'/g,"\\'")}',team:''}); document.getElementById('bx-input-${appId}').value='';">
+        Add "<strong>${inputEl.value.trim()}</strong>" <span class="bx-drop-team">(custom)</span>
+      </div>` : '';
+
+  if (!results.length && !customOption) { dropEl.style.display = 'none'; return; }
+
+  dropEl.innerHTML = results.map((g, i) => {
+    const hotTag = g.hot ? ' 🔥' : '';
+    return `<div class="bx-drop-item" data-idx="${i}"
+      onclick="addBonusPick('${appId}',{name:'${g.name.replace(/'/g,"\\'")}',team:'${g.team.replace(/'/g,"\\'")}'}); document.getElementById('bx-input-${appId}').value=''; document.getElementById('bx-drop-${appId}').style.display='none';">
+      ${g.name}${hotTag} <span class="bx-drop-team">${g.team}</span>
+    </div>`;
+  }).join('') + customOption;
+
+  dropEl.style.display = 'block';
+}
+
+function bxKeydown(e, appId) {
+  const dropEl = document.getElementById(`bx-drop-${appId}`);
+  const items = dropEl.querySelectorAll('.bx-drop-item');
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    bxActiveIdx[appId] = Math.min((bxActiveIdx[appId]||0)+1, items.length-1);
+    items.forEach((el,i) => el.classList.toggle('active', i === bxActiveIdx[appId]));
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    bxActiveIdx[appId] = Math.max((bxActiveIdx[appId]||0)-1, 0);
+    items.forEach((el,i) => el.classList.toggle('active', i === bxActiveIdx[appId]));
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    const idx = bxActiveIdx[appId] >= 0 ? bxActiveIdx[appId] : 0;
+    if (items[idx]) items[idx].click();
+  } else if (e.key === 'Escape') {
+    dropEl.style.display = 'none';
+  }
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('.bx-search-wrap')) {
+    document.querySelectorAll('.bx-dropdown').forEach(d => d.style.display='none');
+  }
+});
+
+// ══════════════════════════════════════════
+// SCOREBOARD
+// ══════════════════════════════════════════
+const ROUND_NAMES=['First Round','Second Round','Regional Final','Semifinal','Nat. Championship','🏆 Champion'];
+function deepest(name) {
+  if (S.champion===name) return 5;
+  if (natPool().includes(name)) return 4;
+  if (SF.some(sf=>sfAdvs(sf.id).includes(name))) return 3;
+  if (REGIONALS.some(r=>rfAdvs(r.id).includes(name))) return 2;
+  if (REGIONALS.some(r=>rfPool(r.id).includes(name))) return 1;
+  if (REGIONALS.some(r=>r.playins.some(p=>S[p.id]===name))) return 0;
+  return -1;
+}
+function teamRegional(name) {
+  for(const reg of REGIONALS){
+    const all=[...reg.quads.flatMap(q=>q.teams),...reg.playins.flatMap(p=>[p.a,p.b])];
+    if(all.includes(name)) return reg.name;
+  } return '—';
+}
+function renderSB() {
+  const all=new Set();
+  REGIONALS.forEach(reg=>{
+    reg.playins.forEach(p=>{all.add(p.a);all.add(p.b);});
+    reg.quads.forEach(q=>q.teams.forEach(n=>all.add(n)));
+  });
+  // Sort by RTN rank ascending
+  const rows=[...all].map(n=>({n,d:deepest(n),r:teamRegional(n),t:tinfo(n)}))
+    .sort((a,b)=>(a.t.rtn||99)-(b.t.rtn||99));
+  document.getElementById('sb-body').innerHTML=rows.map((row)=>{
+    const isC=row.d===5,isF=row.d===4,isS=row.d===3;
+    const tag=isC?'<span class="tag champ">🏆</span>':isF?'<span class="tag fin">→ Final</span>':isS?'<span class="tag nat">→ SF</span>':'';
+    const lbl=row.d>=0?ROUND_NAMES[row.d]:'Not yet picked';
+    return `<tr class="${isC?'champ-row':''}">
+      <td>${row.n}${tag}</td>
+      <td style="color:var(--dim);font-size:11px">${row.t.nqs||'—'}</td>
+      <td style="color:var(--dim);font-size:11px">${row.t.rtn?'#'+row.t.rtn:'—'}</td>
+      <td style="color:var(--dim);font-size:11px">${lbl}</td>
+      <td style="color:var(--dim);font-size:11px">${row.r}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// PROGRESS
+// ══════════════════════════════════════════
+function updateProgress() {
+  let made=0;
+  REGIONALS.forEach(reg=>{
+    reg.playins.forEach(p=>{ if(S[p.id]) made++; });
+    reg.quads.forEach(q=>{ if(S[q.id+'._1']) made++; if(S[q.id+'._2']) made++; });
+    if(S['rf_'+reg.id+'._1']) made++;
+    if(S['rf_'+reg.id+'._2']) made++;
+  });
+  SF.forEach(sf=>{ if(S[sf.id+'._1']) made++; if(S[sf.id+'._2']) made++; });
+  if(S.champion) made++;
+  document.getElementById('prog-fill').style.width=(made/33*100)+'%';
+  document.getElementById('prog-pct').textContent=`${made} / 33 picks`;
+}
+
+// ══════════════════════════════════════════
+// TAB NAV
+// ══════════════════════════════════════════
+const TAB_IDS=['r1','r2','rf','sf','nc','bx','sb','lb'];
+function goTab(id,el) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  el.classList.add('active');
+  if (id==='lb') renderLeaderboard();
+}
+function goTabId(id) {
+  const idx=TAB_IDS.indexOf(id);
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  document.getElementById('panel-'+id).classList.add('active');
+  if (id==='lb') renderLeaderboard();
+}
+function resetAll() {
+  const bar = document.getElementById('reset-confirm-bar');
+  bar.style.display = bar.style.display === 'flex' ? 'none' : 'flex';
+}
+function resetConfirmed() {
+  document.getElementById('reset-confirm-bar').style.display = 'none';
+  clearState();
+  document.getElementById('entry-name-input').value = '';
+  document.getElementById('entry-btn').disabled = true;
+  document.getElementById('entry-error').textContent = '';
+  document.getElementById('entry-screen').style.display = 'flex';
+  document.getElementById('player-name-bar').style.display = 'none';
+  document.getElementById('player-name-display').textContent = '';
+  renderAll();
+}
+function resetCancelled() {
+  document.getElementById('reset-confirm-bar').style.display = 'none';
+}
+
+// ══════════════════════════════════════════
+// LEADERBOARD & SCORING
+// ══════════════════════════════════════════
+// Points per round
+const PTS = { r2: 1, rf: 2, sf: 4, champ: 8 };
+
+// Extract saveable bracket snapshot from current state S
+function getBracketSnapshot() {
+  const snap = { name: S._playerName, submittedAt: Date.now() };
+  // Second round advancers per quad
+  REGIONALS.forEach(reg => reg.quads.forEach(q => {
+    snap[q.id+'._1'] = S[q.id+'._1'] || null;
+    snap[q.id+'._2'] = S[q.id+'._2'] || null;
+  }));
+  // Regional final advancers
+  REGIONALS.forEach(reg => {
+    snap['rf_'+reg.id+'._1'] = S['rf_'+reg.id+'._1'] || null;
+    snap['rf_'+reg.id+'._2'] = S['rf_'+reg.id+'._2'] || null;
+  });
+  // SF advancers
+  SF.forEach(sf => {
+    snap[sf.id+'._1'] = S[sf.id+'._1'] || null;
+    snap[sf.id+'._2'] = S[sf.id+'._2'] || null;
+  });
+  snap.champion = S.champion || null;
+  // Bonus picks — store as {name,team} objects
+  BONUS_APPARATUSES.forEach(app => {
+    snap['bx_'+app.id] = (S['bx_'+app.id] || []).map(p =>
+      typeof p === 'string' ? {name:p,team:''} : p
+    );
+  });
+  return snap;
+}
+
+// Count picks made (same logic as progress bar)
+function countPicks() {
+  let made=0;
+  REGIONALS.forEach(reg=>{
+    reg.playins.forEach(p=>{ if(S[p.id]) made++; });
+    reg.quads.forEach(q=>{ if(S[q.id+'._1']) made++; if(S[q.id+'._2']) made++; });
+    if(S['rf_'+reg.id+'._1']) made++;
+    if(S['rf_'+reg.id+'._2']) made++;
+  });
+  SF.forEach(sf=>{ if(S[sf.id+'._1']) made++; if(S[sf.id+'._2']) made++; });
+  if(S.champion) made++;
+  return made;
+}
+
+// Score a bracket snapshot against actual results
+// results = { r2: Set, rf: Set, sf: Set, champ: string }
+function scoreBracket(snap, results) {
+  let r2=0, rf=0, sf=0, champ=0;
+  if (results.r2) {
+    REGIONALS.forEach(reg => reg.quads.forEach(q => {
+      if (snap[q.id+'._1'] && results.r2.has(snap[q.id+'._1'])) r2++;
+      if (snap[q.id+'._2'] && results.r2.has(snap[q.id+'._2'])) r2++;
+    }));
+  }
+  if (results.rf) {
+    REGIONALS.forEach(reg => {
+      if (snap['rf_'+reg.id+'._1'] && results.rf.has(snap['rf_'+reg.id+'._1'])) rf++;
+      if (snap['rf_'+reg.id+'._2'] && results.rf.has(snap['rf_'+reg.id+'._2'])) rf++;
+    });
+  }
+  if (results.sf) {
+    SF.forEach(s => {
+      if (snap[s.id+'._1'] && results.sf.has(snap[s.id+'._1'])) sf++;
+      if (snap[s.id+'._2'] && results.sf.has(snap[s.id+'._2'])) sf++;
+    });
+  }
+  if (results.champ && snap.champion === results.champ) champ = 1;
+  // Bonus: 1pt per correct 10.0 pick
+  let bonus = 0;
+  if (results.tens) {
+    BONUS_APPARATUSES.forEach(app => {
+      const picks = snap['bx_'+app.id] || [];
+      const actuals = new Set(results.tens[app.id] || []);
+      picks.forEach(p => {
+        const n = typeof p === 'string' ? p : p.name;
+        if (actuals.has(n)) bonus++;
+      });
+    });
+  }
+  return {
+    r2, rf, sf, champ, bonus,
+    total: r2*PTS.r2 + rf*PTS.rf + sf*PTS.sf + champ*PTS.champ + bonus
+  };
+}
+
+// Update submit button on leaderboard tab
+function updateSubmitButtons() {
+  const picks = countPicks();
+  const wrapEl = document.getElementById('lb-submit-wrap');
+  const msgEl  = document.getElementById('lb-submit-msg');
+  const btnEl  = document.getElementById('lb-submit-btn');
+  if (!wrapEl) return;
+  if (!S._playerName) { wrapEl.style.display='none'; return; }
+  wrapEl.style.display = 'block';
+  if (S._submittedKey) {
+    msgEl.textContent = '✓ Your bracket has been submitted.';
+    btnEl.textContent = 'Update My Submission';
+    btnEl.disabled = false;
+  } else if (picks < 33) {
+    msgEl.textContent = `Complete all picks first (${picks}/33 done).`;
+    btnEl.textContent = 'Submit My Bracket to Leaderboard';
+    btnEl.disabled = true;
+  } else {
+    msgEl.textContent = 'All picks complete — ready to submit!';
+    btnEl.textContent = 'Submit My Bracket to Leaderboard';
+    btnEl.disabled = false;
+  }
+}
+
+// ══════════════════════════════════════════
+// GOOGLE SHEETS BACKEND
+// ══════════════════════════════════════════
+// Paste your deployed Apps Script Web App URL here:
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyCnDLU9-T5bxLkF_Ox2Fg0gbteB9K3Hjgshn5gZC27KDe6zm9xQt3ELnA6BISMx-c1/exec';
+
+async function apiGet(action) {
+  const res = await fetch(`${SCRIPT_URL}?action=${action}`);
+  return res.json();
+}
+async function apiPost(action, data) {
+  const res = await fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action, data }),
+  });
+  return res.json();
+}
+
+// Submit current bracket to Google Sheets
+async function submitBracket() {
+  const btn = document.getElementById('lb-submit-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
+  try {
+    const snap = getBracketSnapshot();
+    const result = await apiPost('submitBracket', snap);
+    if (result.error) throw new Error(result.error);
+    S._submittedKey = result.key;
+    save();
+    if (btn) btn.textContent = '✓ Submitted!';
+    const msg = document.getElementById('lb-submit-msg');
+    if (msg) msg.textContent = result.updated
+      ? 'Your bracket has been updated on the leaderboard.'
+      : 'Your bracket is on the leaderboard!';
+    updateSubmitButtons();
+    renderLeaderboard();
+  } catch(e) {
+    updateSubmitButtons();
+    const msg = document.getElementById('lb-submit-msg');
+    if (msg) msg.textContent = 'Error submitting — please try again.';
+    console.error(e);
+  }
+}
+
+// Load and render results entry UI — cascades per round
+async function renderResults() {
+  let results = {};
+  try {
+    const r = await apiGet('getResults');
+    results = r.results || {};
+  } catch {}
+
+  const r1Teams = byRank(REGIONALS.flatMap(reg =>
+    reg.playins.flatMap(p => [p.a, p.b])
+  ));
+  const r2Teams = byRank([...new Set(REGIONALS.flatMap(reg =>
+    reg.quads.flatMap(q => {
+      const teams = [...q.teams];
+      if (q.piSlot) {
+        const pi = reg.playins.find(p => p.id === q.piId);
+        if (pi) { teams.push(pi.a); teams.push(pi.b); }
+      }
+      return teams;
+    })
+  ))]);
+
+  const r2Confirmed = new Set(results.r2 || []);
+  const rfTeams = byRank(r2Confirmed.size > 0 ? [...r2Confirmed] : r2Teams);
+  const rfConfirmed = new Set(results.rf || []);
+  const sfTeams = byRank(rfConfirmed.size > 0 ? [...rfConfirmed] : rfTeams);
+  const sfConfirmed = new Set(results.sf || []);
+  const champTeams = byRank(sfConfirmed.size > 0 ? [...sfConfirmed] : sfTeams);
+
+  const rounds = [
+    { key:'r1',    label:'First Round — Play-In Winners', teams: r1Teams,    multi: true  },
+    { key:'r2',    label:'Second Round Advancers',        teams: r2Teams,    multi: true  },
+    { key:'rf',    label:'Regional Final Advancers',      teams: rfTeams,    multi: true  },
+    { key:'sf',    label:'Semifinal Advancers',           teams: sfTeams,    multi: true  },
+    { key:'champ', label:'National Champion',             teams: champTeams, multi: false },
+  ];
+
+  const grid = document.getElementById('results-grid');
+  grid.innerHTML = rounds.map(round => {
+    const confirmed = results[round.key]
+      ? (round.multi ? new Set(results[round.key]) : results[round.key])
+      : null;
+    const tags = round.teams.map(name => {
+      const isOn = round.multi ? (confirmed && confirmed.has(name)) : (confirmed === name);
+      return `<button class="result-tag ${isOn ? 'confirmed' : ''}"
+        onclick="toggleResult('${round.key}',${round.multi},'${name.replace(/'/g,"\\'")}')">
+        ${name}
+      </button>`;
+    }).join('');
+    return `<div class="results-round">
+      <div class="results-round-label">${round.label}</div>
+      <div class="results-teams">${tags || '<span style="color:var(--dim);font-size:11px;font-style:italic">Confirm prior round first</span>'}</div>
+    </div>`;
+  }).join('');
+}
+
+// Toggle a result and save to Google Sheets
+async function toggleResult(roundKey, multi, name) {
+  let results = {};
+  try {
+    const r = await apiGet('getResults');
+    results = r.results || {};
+  } catch {}
+  if (multi) {
+    const set = new Set(results[roundKey] || []);
+    if (set.has(name)) set.delete(name); else set.add(name);
+    results[roundKey] = [...set];
+  } else {
+    results[roundKey] = (results[roundKey] === name) ? null : name;
+  }
+  try { await apiPost('setResults', results); } catch {}
+  renderLeaderboard();
+}
+
+// Main leaderboard render
+async function renderLeaderboard() {
+  updateSubmitButtons();
+  await renderResults();
+  await renderBonusResults();
+
+  let results = { r2: new Set(), rf: new Set(), sf: new Set(), champ: null, tens: {} };
+  try {
+    const r = await apiGet('getResults');
+    const rd = r.results || {};
+    if (rd.r2)    results.r2    = new Set(rd.r2);
+    if (rd.rf)    results.rf    = new Set(rd.rf);
+    if (rd.sf)    results.sf    = new Set(rd.sf);
+    if (rd.champ) results.champ = rd.champ;
+  } catch {}
+  try {
+    const t = await apiGet('getTens');
+    results.tens = t.tens || {};
+  } catch {}
+
+  let entries = [];
+  try {
+    const b = await apiGet('getBrackets');
+    (b.brackets || []).forEach(snap => {
+      const score = scoreBracket(snap, results);
+      entries.push({ snap, score, key: snap.key });
+    });
+  } catch {}
+
+  entries.sort((a,b) => b.score.total - a.score.total || a.snap.submittedAt - b.snap.submittedAt);
+
+  const tbody = document.getElementById('lb-body');
+  const empty = document.getElementById('lb-empty');
+
+  if (!entries.length) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    let rank = 1;
+    tbody.innerHTML = entries.map((e, i) => {
+      if (i > 0 && e.score.total < entries[i-1].score.total) rank = i+1;
+      const isMe = e.snap.name && S._playerName &&
+        e.snap.name.toLowerCase() === S._playerName.toLowerCase();
+      const isFirst = rank === 1;
+      const medals = ['🥇','🥈','🥉'];
+      const rankDisp = rank <= 3 ? medals[rank-1] : rank;
+      const champDisp = e.snap.champion || '—';
+      const dt = new Date(e.snap.submittedAt);
+      const dtStr = dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      return `<tr class="${isFirst?'lb-first':''} ${isMe?'me-row':''}">
+        <td class="lb-rank">${rankDisp}</td>
+        <td>${e.snap.name||'Anonymous'}${isMe?'<span class="lb-you">YOU</span>':''}</td>
+        <td class="lb-score">${e.score.total}</td>
+        <td class="lb-sub-pts">${e.score.r2}</td>
+        <td class="lb-sub-pts">${e.score.rf}</td>
+        <td class="lb-sub-pts">${e.score.sf}</td>
+        <td class="lb-champ">${champDisp}</td>
+        <td class="lb-sub-pts" style="color:#f0d060">${e.score.bonus}</td>
+        <td style="color:var(--dim);font-size:10px">${dtStr}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  document.getElementById('lb-last-updated').textContent =
+    'Updated ' + new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+}
+
+// Render bonus 10.0 results entry
+async function renderBonusResults() {
+  let tens = {};
+  try {
+    const t = await apiGet('getTens');
+    tens = t.tens || {};
+  } catch {}
+
+  const grid = document.getElementById('bonus-results-grid');
+  grid.innerHTML = BONUS_APPARATUSES.map(app => {
+    const confirmed = new Set(tens[app.id] || []);
+    const gymnasts = GYMNASTS_BY_APP[app.id] || [];
+    const tags = gymnasts.map(g => {
+      const isOn = confirmed.has(g.name);
+      return `<button class="result-tag ${isOn ? 'confirmed' : ''}"
+        onclick="toggleTen('${app.id}','${g.name.replace(/'/g,"\\'")}')">
+        ${g.name}
+      </button>`;
+    }).join('');
+    return `<div class="results-round">
+      <div class="results-round-label">${app.icon} ${app.label}</div>
+      <div class="results-teams">${tags}</div>
+    </div>`;
+  }).join('');
+}
+
+// Toggle a 10.0 result
+async function toggleTen(appId, name) {
+  let tens = {};
+  try {
+    const t = await apiGet('getTens');
+    tens = t.tens || {};
+  } catch {}
+  const set = new Set(tens[appId] || []);
+  if (set.has(name)) set.delete(name); else set.add(name);
+  tens[appId] = [...set];
+  try { await apiPost('setTens', tens); } catch {}
+  renderLeaderboard();
+}
+
+function renderAll() {
+  renderR1(); renderR2(); renderRF(); renderSF(); renderNC(); renderBX(); renderSB(); updateProgress(); updateSubmitButtons();
+}
+</script>
+</body>
+</html>
