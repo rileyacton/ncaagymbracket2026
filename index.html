@@ -2060,7 +2060,7 @@ async function renderResults() {
 // Generate one at: https://emn178.github.io/online-tools/sha256.html
 // Default password is: gymnast2026
 // ══════════════════════════════════════════
-const ADMIN_PW_HASH = 'b3b1d587dafe8b6aa3e8e6b65636cf9fd4a7b03c9b3fe52a3beec5a33bc2d2c9';
+const ADMIN_PW_HASH = 'f977056c2de914368dfe30e8b68f67f409c00ee4bb38592d3e9aaf4b6c76f2cb';
 
 async function hashPassword(pw) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
