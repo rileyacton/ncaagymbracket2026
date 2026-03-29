@@ -127,6 +127,25 @@ header h1 span { color: var(--gold); }
 .tag.fin { background: #2a2200; color: var(--gold); }
 .tag.champ { background: #3a2a00; color: var(--gold-light); }
 
+.tiebreaker-box {
+  max-width: 480px; margin: 16px auto 0; border: 1px solid var(--border);
+  border-radius: 6px; padding: 18px 24px; background: #0d1e36; text-align: center;
+}
+.tb-label { font-size: 10px; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; margin-bottom: 6px; }
+.tb-desc { font-size: 11px; color: var(--dim); margin-bottom: 14px; }
+.tb-input-row { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.tb-input {
+  width: 130px; padding: 10px 14px; text-align: center;
+  background: var(--mid); border: 1px solid var(--border); border-radius: 4px;
+  font-family: 'Courier Prime', monospace; font-size: 18px; font-weight: 700;
+  color: var(--gold-light); outline: none; transition: border-color .2s;
+  -moz-appearance: textfield;
+}
+.tb-input::-webkit-outer-spin-button,
+.tb-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.tb-input:focus { border-color: var(--gold); }
+.tb-input::placeholder { color: var(--dim); font-size: 13px; font-weight: 400; }
+.tb-unit { font-size: 11px; color: var(--dim); letter-spacing: 1px; }
 .nav-hint { text-align: center; margin-top: 20px; font-size: 11px; color: var(--dim); }
 .nav-hint button { background: transparent; border: 1px solid var(--border); color: var(--gold); font-family: 'Courier Prime', monospace; font-size: 11px; padding: 5px 16px; cursor: pointer; border-radius: 3px; margin-left: 8px; transition: all .2s; }
 .nav-hint button:hover { background: var(--gold); color: var(--navy); }
@@ -373,11 +392,21 @@ header h1 span { color: var(--gold); }
     <div class="round-date">April 18 · Fort Worth, TX · ABC</div>
     <div class="round-desc">4 finalists · pick your national champion</div>
   </div>
-  <div class="matchup-grid" id="grid-nc" style="max-width:420px;margin:0 auto 24px;"></div>
+  <div class="matchup-grid" id="grid-nc" style="max-width:480px;margin:0 auto 24px;"></div>
   <div class="champ-box">
     <div class="champ-lbl">🏆 2026 National Champion</div>
     <div class="champ-name" id="champ-name">—</div>
     <div class="champ-hint" id="champ-hint">Pick the champion above</div>
+  </div>
+  <div class="tiebreaker-box">
+    <div class="tb-label">Tiebreaker — Champion's Winning Score</div>
+    <div class="tb-desc">If there's a tie, the entry closest to the champion's actual team score wins.</div>
+    <div class="tb-input-row">
+      <input class="tb-input" id="tb-input" type="number" min="190" max="200" step="0.001"
+        placeholder="e.g. 198.225"
+        oninput="saveTiebreaker()">
+      <span class="tb-unit">pts</span>
+    </div>
   </div>
   <div class="nav-hint">Done? <button onclick="goTabId('bx')">Next: Bonus Picks →</button></div>
 </div>
@@ -430,6 +459,7 @@ header h1 span { color: var(--gold); }
             <th>SF</th>
             <th>Champ</th>
             <th>⭐ Bonus</th>
+            <th>Tiebreaker</th>
             <th>Submitted</th>
           </tr>
         </thead>
@@ -653,7 +683,18 @@ function pick2(baseKey, name, cascade) {
 function pickQuad(qid,name){ pick2(qid,name,cascadeFromQuads); }
 function pickRF(rid,name)  { pick2('rf_'+rid,name,cascadeFromRF); }
 function pickSF(sfId,name) { pick2(sfId,name,()=>{ if(S.champion&&!natPool().includes(S.champion))delete S.champion; }); save(); renderAll(); }
-function pickChamp(name)   { S.champion=(S.champion===name)?null:name; save(); renderAll(); }
+function saveTiebreaker() {
+  const val = document.getElementById('tb-input').value.trim();
+  const num = parseFloat(val);
+  if (val === '' || isNaN(num)) {
+    delete S.tiebreaker;
+  } else {
+    S.tiebreaker = num;
+  }
+  save();
+}
+
+function pickChamp(name) { S.champion=(S.champion===name)?null:name; save(); renderAll(); }
 
 // ══════════════════════════════════════════
 // RENDER HELPERS
@@ -771,6 +812,8 @@ function renderNC() {
   document.getElementById('grid-nc').innerHTML=mcard('National Championship Final','April 18 · ABC',body);
   document.getElementById('champ-name').textContent=champ||'—';
   document.getElementById('champ-hint').textContent=champ?'🎉 Champion locked in!':'Pick the winner above';
+  const tbInput = document.getElementById('tb-input');
+  if (tbInput && S.tiebreaker != null) tbInput.value = S.tiebreaker;
 }
 
 // ══════════════════════════════════════════
@@ -1810,6 +1853,7 @@ function getBracketSnapshot() {
     snap[sf.id+'._2'] = S[sf.id+'._2'] || null;
   });
   snap.champion = S.champion || null;
+  snap.tiebreaker = S.tiebreaker != null ? S.tiebreaker : null;
   // Bonus picks — store as {name,team} objects
   BONUS_APPARATUSES.forEach(app => {
     snap['bx_'+app.id] = (S['bx_'+app.id] || []).map(p =>
@@ -1932,7 +1976,8 @@ async function submitBracket() {
       ? 'Your bracket has been updated on the leaderboard.'
       : 'Your bracket is on the leaderboard!';
     updateSubmitButtons();
-    renderLeaderboard();
+    // Redirect to leaderboard after a brief pause
+    setTimeout(() => goTabId('lb'), 800);
   } catch(e) {
     console.error('Submit error:', e);
     updateSubmitButtons();
@@ -2033,10 +2078,11 @@ async function renderLeaderboard() {
   try {
     const r = await apiGet('getResults');
     const rd = r.results || {};
-    if (rd.r2)    results.r2    = new Set(rd.r2);
-    if (rd.rf)    results.rf    = new Set(rd.rf);
-    if (rd.sf)    results.sf    = new Set(rd.sf);
-    if (rd.champ) results.champ = rd.champ;
+    if (rd.r2)        results.r2        = new Set(rd.r2);
+    if (rd.rf)        results.rf        = new Set(rd.rf);
+    if (rd.sf)        results.sf        = new Set(rd.sf);
+    if (rd.champ)     results.champ     = rd.champ;
+    if (rd.champScore != null) results.champScore = parseFloat(rd.champScore);
   } catch {}
   try {
     const t = await apiGet('getTens');
@@ -2052,11 +2098,21 @@ async function renderLeaderboard() {
     });
   } catch {}
 
-  entries.sort((a,b) => b.score.total - a.score.total || a.snap.submittedAt - b.snap.submittedAt);
+  entries.sort((a, b) => {
+    if (b.score.total !== a.score.total) return b.score.total - a.score.total;
+    // Tiebreaker: closest to actual winning score (if known), else earlier submission
+    const actualScore = results.champScore || null;
+    if (actualScore != null) {
+      const aDiff = a.snap.tiebreaker != null ? Math.abs(a.snap.tiebreaker - actualScore) : Infinity;
+      const bDiff = b.snap.tiebreaker != null ? Math.abs(b.snap.tiebreaker - actualScore) : Infinity;
+      if (aDiff !== bDiff) return aDiff - bDiff;
+    }
+    return a.snap.submittedAt - b.snap.submittedAt;
+  });
 
   const tbody = document.getElementById('lb-body');
   const empty = document.getElementById('lb-empty');
-  const COL_SPAN = 10; // number of columns in the table
+  const COL_SPAN = 11; // number of columns in the table
 
   if (!entries.length) {
     tbody.innerHTML = '';
@@ -2072,6 +2128,7 @@ async function renderLeaderboard() {
       const medals = ['🥇','🥈','🥉'];
       const rankDisp = rank <= 3 ? medals[rank-1] : rank;
       const champDisp = e.snap.champion || '—';
+      const tbDisp = e.snap.tiebreaker != null ? e.snap.tiebreaker.toFixed(3) : '—';
       const dt = new Date(e.snap.submittedAt);
       const dtStr = dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});
       const rowId = 'r' + i;
@@ -2086,6 +2143,7 @@ async function renderLeaderboard() {
         <td class="lb-sub-pts">${e.score.sf}</td>
         <td class="lb-champ">${champDisp}</td>
         <td class="lb-sub-pts" style="color:#f0d060">${e.score.bonus}</td>
+        <td class="lb-sub-pts" style="color:var(--gold)">${tbDisp}</td>
         <td style="color:var(--dim);font-size:10px">${dtStr}</td>
       </tr>
       <tr class="lb-detail-row" id="lb-detail-${rowId}">${detailHTML}</tr>`;
