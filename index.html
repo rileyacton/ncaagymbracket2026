@@ -66,6 +66,7 @@ header h1 span { color: var(--gold); }
 .round-desc { font-size: 11px; color: var(--dim); margin-top: 6px; }
 
 .matchup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; max-width: 1100px; margin: 0 auto; }
+@media (min-width: 700px) { .matchup-grid { grid-template-columns: repeat(2, 1fr); } }
 .matchup-card { background: var(--mid); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
 .matchup-card-hdr { background: var(--navy); border-bottom: 1px solid var(--border); padding: 8px 14px; display: flex; align-items: center; gap: 8px; }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
@@ -173,6 +174,7 @@ header h1 span { color: var(--gold); }
 
 /* BONUS TAB */
 .bx-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; max-width: 1100px; margin: 0 auto; }
+@media (min-width: 700px) { .bx-grid { grid-template-columns: repeat(2, 1fr); } }
 .bx-card { background: var(--mid); border: 1px solid var(--border); border-radius: 4px; overflow: visible; }
 .bx-card-hdr { background: var(--navy); border-bottom: 2px solid var(--gold); padding: 10px 14px; display: flex; align-items: center; gap: 10px; border-radius: 4px 4px 0 0; }
 .bx-apparatus { font-size: 10px; letter-spacing: 2px; color: var(--gold); text-transform: uppercase; font-weight: 700; }
@@ -233,6 +235,27 @@ header h1 span { color: var(--gold); }
   padding: 16px; margin-bottom: 20px;
 }
 .results-title { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold); margin-bottom: 4px; }
+.results-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.admin-lock-btn {
+  background: transparent; border: 1px solid var(--border); color: var(--dim);
+  font-family: 'Courier Prime', monospace; font-size: 10px; padding: 3px 10px;
+  cursor: pointer; border-radius: 3px; letter-spacing: 1px; transition: all .2s;
+}
+.admin-lock-btn:hover { border-color: var(--gold); color: var(--gold); }
+.admin-lock-btn.unlocked { border-color: var(--green); color: var(--green); }
+.admin-pw-input {
+  background: var(--navy); border: 1px solid var(--border); border-radius: 3px;
+  font-family: 'Courier Prime', monospace; font-size: 13px; color: var(--cream);
+  padding: 6px 10px; outline: none; margin-right: 8px; width: 180px;
+}
+.admin-pw-input:focus { border-color: var(--gold); }
+.admin-pw-btn {
+  background: var(--gold); border: none; border-radius: 3px; padding: 6px 14px;
+  font-family: 'Courier Prime', monospace; font-size: 12px; font-weight: 700;
+  color: var(--navy); cursor: pointer; transition: all .2s;
+}
+.admin-pw-btn:hover { background: var(--gold-light); }
+.admin-pw-error { font-size: 11px; color: #cc6666; margin-left: 8px; }
 .results-desc { font-size: 10px; color: var(--dim); margin-bottom: 14px; letter-spacing: .5px; }
 .results-grid { display: flex; flex-direction: column; gap: 10px; }
 .results-round { }
@@ -415,26 +438,6 @@ header h1 span { color: var(--gold); }
       <div class="round-date">Scoring: 1pt Second Round · 2pt Regional Final · 4pt Semifinal · 8pt Champion · 1pt per 10.0 bonus</div>
     </div>
 
-    <!-- Results entry (shared, visible to all) -->
-    <div class="results-box" id="results-box">
-      <div class="results-title">Enter Actual Results</div>
-      <div class="results-desc">As rounds complete, enter the teams that actually advanced. Scores update automatically for all entrants.</div>
-      <div class="results-grid" id="results-grid"></div>
-    </div>
-
-    <!-- Bonus results entry -->
-    <div class="results-box" id="bonus-results-box" style="margin-top:16px">
-      <div class="results-title">⭐ Enter Actual 10.0s</div>
-      <div class="results-desc">Mark gymnasts who scored a 10.0 during the tournament. +1 bonus point per correct pick.</div>
-      <div class="results-grid" id="bonus-results-grid"></div>
-    </div>
-
-    <!-- Submit bracket prompt -->
-    <div class="lb-submit-wrap" id="lb-submit-wrap" style="display:none">
-      <div class="lb-submit-msg" id="lb-submit-msg"></div>
-      <button class="lb-submit-btn" id="lb-submit-btn" onclick="submitBracket()">Submit My Bracket to Leaderboard</button>
-    </div>
-
     <!-- Leaderboard table -->
     <div class="lb-table-wrap">
       <div class="lb-refresh-row">
@@ -458,6 +461,28 @@ header h1 span { color: var(--gold); }
         <tbody id="lb-body"></tbody>
       </table>
       <div id="lb-empty" class="lb-empty" style="display:none">No brackets submitted yet. Be the first!</div>
+    </div>
+
+    <!-- Results entry (admin only) -->
+    <div class="results-box" id="results-box" style="margin-top:28px">
+      <div class="results-title-row">
+        <div class="results-title">Enter Actual Results</div>
+        <button class="admin-lock-btn" id="admin-lock-btn" onclick="toggleAdminUnlock()">🔒 Admin</button>
+      </div>
+      <div class="results-desc">As rounds complete, enter the teams that actually advanced. Scores update automatically for all entrants.</div>
+      <div id="admin-unlock-form" style="display:none; margin-bottom:12px;">
+        <input class="admin-pw-input" id="admin-pw-input" type="password" placeholder="Admin password…" autocomplete="off" onkeydown="if(event.key==='Enter') submitAdminPassword()">
+        <button class="admin-pw-btn" onclick="submitAdminPassword()">Unlock</button>
+        <span class="admin-pw-error" id="admin-pw-error"></span>
+      </div>
+      <div class="results-grid" id="results-grid"></div>
+    </div>
+
+    <!-- Bonus results entry (admin only) -->
+    <div class="results-box" id="bonus-results-box" style="margin-top:16px">
+      <div class="results-title">⭐ Enter Actual 10.0s</div>
+      <div class="results-desc">Mark gymnasts who scored a 10.0 during the tournament. +1 bonus point per correct pick.</div>
+      <div class="results-grid" id="bonus-results-grid"></div>
     </div>
   </div>
 </div>
@@ -625,6 +650,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (S._playerName) {
     showBracket(S._playerName);
   }
+  updateAdminUI();
   renderAll();
 });const piWinner = id => S[id]||null;
 const quadAdvs = id => [S[id+'._1'],S[id+'._2']].filter(Boolean);
@@ -1896,34 +1922,28 @@ function scoreBracket(snap, results) {
   };
 }
 
-// Update submit buttons (leaderboard tab + bonus tab)
+// Update submit button (bonus tab only)
 function updateSubmitButtons() {
   const picks = countPicks();
-  const instances = [
-    { wrap:'lb-submit-wrap', msg:'lb-submit-msg', btn:'lb-submit-btn' },
-    { wrap:'bx-submit-wrap', msg:'bx-submit-msg', btn:'bx-submit-btn' },
-  ];
-  instances.forEach(({wrap, msg, btn}) => {
-    const wrapEl = document.getElementById(wrap);
-    const msgEl  = document.getElementById(msg);
-    const btnEl  = document.getElementById(btn);
-    if (!wrapEl) return;
-    if (!S._playerName) { wrapEl.style.display = 'none'; return; }
-    wrapEl.style.display = 'block';
-    if (S._submittedKey) {
-      msgEl.textContent = '✓ Your bracket has been submitted.';
-      btnEl.textContent = 'Update My Submission';
-      btnEl.disabled = false;
-    } else if (picks < 33) {
-      msgEl.textContent = `Complete all bracket picks first (${picks}/33 done).`;
-      btnEl.textContent = 'Submit My Bracket to Leaderboard';
-      btnEl.disabled = true;
-    } else {
-      msgEl.textContent = 'All picks complete — ready to submit!';
-      btnEl.textContent = 'Submit My Bracket to Leaderboard';
-      btnEl.disabled = false;
-    }
-  });
+  const wrapEl = document.getElementById('bx-submit-wrap');
+  const msgEl  = document.getElementById('bx-submit-msg');
+  const btnEl  = document.getElementById('bx-submit-btn');
+  if (!wrapEl) return;
+  if (!S._playerName) { wrapEl.style.display = 'none'; return; }
+  wrapEl.style.display = 'block';
+  if (S._submittedKey) {
+    msgEl.textContent = '✓ Your bracket has been submitted.';
+    btnEl.textContent = 'Update My Submission';
+    btnEl.disabled = false;
+  } else if (picks < 33) {
+    msgEl.textContent = `Complete all bracket picks first (${picks}/33 done).`;
+    btnEl.textContent = 'Submit My Bracket to Leaderboard';
+    btnEl.disabled = true;
+  } else {
+    msgEl.textContent = 'All picks complete — ready to submit!';
+    btnEl.textContent = 'Submit My Bracket to Leaderboard';
+    btnEl.disabled = false;
+  }
 }
 
 // ══════════════════════════════════════════
@@ -1946,7 +1966,7 @@ async function apiPost(action, data) {
 
 // Submit current bracket to Google Sheets
 async function submitBracket() {
-  ['lb-submit-btn','bx-submit-btn'].forEach(id => {
+  ['bx-submit-btn'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.disabled = true; el.textContent = 'Submitting…'; }
   });
@@ -1956,11 +1976,11 @@ async function submitBracket() {
     if (result.error) throw new Error(result.error);
     S._submittedKey = result.key;
     save();
-    ['lb-submit-btn','bx-submit-btn'].forEach(id => {
+    ['bx-submit-btn'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.textContent = '✓ Submitted!';
     });
-    ['lb-submit-msg','bx-submit-msg'].forEach(id => {
+    ['bx-submit-msg'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.textContent = result.updated
         ? 'Your bracket has been updated on the leaderboard.'
@@ -1970,7 +1990,7 @@ async function submitBracket() {
     renderLeaderboard();
   } catch(e) {
     updateSubmitButtons();
-    ['lb-submit-msg','bx-submit-msg'].forEach(id => {
+    ['bx-submit-msg'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.textContent = 'Error submitting — please try again.';
     });
@@ -2034,8 +2054,68 @@ async function renderResults() {
   }).join('');
 }
 
-// Toggle a result and save to Google Sheets
+// ══════════════════════════════════════════
+// ADMIN PASSWORD
+// Change ADMIN_PW_HASH to the SHA-256 of your chosen password.
+// Generate one at: https://emn178.github.io/online-tools/sha256.html
+// Default password is: gymnast2026
+// ══════════════════════════════════════════
+const ADMIN_PW_HASH = 'b3b1d587dafe8b6aa3e8e6b65636cf9fd4a7b03c9b3fe52a3beec5a33bc2d2c9';
+
+async function hashPassword(pw) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function isAdminUnlocked() {
+  return sessionStorage.getItem('gym26_admin') === 'yes';
+}
+
+function toggleAdminUnlock() {
+  if (isAdminUnlocked()) {
+    sessionStorage.removeItem('gym26_admin');
+    updateAdminUI();
+    renderLeaderboard();
+  } else {
+    const form = document.getElementById('admin-unlock-form');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    if (form.style.display === 'block') {
+      setTimeout(() => document.getElementById('admin-pw-input').focus(), 50);
+    }
+  }
+}
+
+async function submitAdminPassword() {
+  const pw = document.getElementById('admin-pw-input').value;
+  const hash = await hashPassword(pw);
+  if (hash === ADMIN_PW_HASH) {
+    sessionStorage.setItem('gym26_admin', 'yes');
+    document.getElementById('admin-pw-input').value = '';
+    document.getElementById('admin-unlock-form').style.display = 'none';
+    document.getElementById('admin-pw-error').textContent = '';
+    updateAdminUI();
+    renderLeaderboard();
+  } else {
+    document.getElementById('admin-pw-error').textContent = 'Incorrect password.';
+    document.getElementById('admin-pw-input').value = '';
+  }
+}
+
+function updateAdminUI() {
+  const btn = document.getElementById('admin-lock-btn');
+  if (!btn) return;
+  if (isAdminUnlocked()) {
+    btn.textContent = '🔓 Admin';
+    btn.classList.add('unlocked');
+  } else {
+    btn.textContent = '🔒 Admin';
+    btn.classList.remove('unlocked');
+  }
+}
+
+// Toggle a result and save to Google Sheets (admin only)
 async function toggleResult(roundKey, multi, name) {
+  if (!isAdminUnlocked()) { toggleAdminUnlock(); return; }
   let results = {};
   try {
     const r = await apiGet('getResults');
@@ -2052,7 +2132,20 @@ async function toggleResult(roundKey, multi, name) {
   renderLeaderboard();
 }
 
-// Main leaderboard render
+// Toggle a 10.0 result (admin only)
+async function toggleTen(appId, name) {
+  if (!isAdminUnlocked()) { toggleAdminUnlock(); return; }
+  let tens = {};
+  try {
+    const t = await apiGet('getTens');
+    tens = t.tens || {};
+  } catch {}
+  const set = new Set(tens[appId] || []);
+  if (set.has(name)) set.delete(name); else set.add(name);
+  tens[appId] = [...set];
+  try { await apiPost('setTens', tens); } catch {}
+  renderLeaderboard();
+}
 async function renderLeaderboard() {
   updateSubmitButtons();
   await renderResults();
@@ -2144,20 +2237,6 @@ async function renderBonusResults() {
       <div class="results-teams">${tags}</div>
     </div>`;
   }).join('');
-}
-
-// Toggle a 10.0 result
-async function toggleTen(appId, name) {
-  let tens = {};
-  try {
-    const t = await apiGet('getTens');
-    tens = t.tens || {};
-  } catch {}
-  const set = new Set(tens[appId] || []);
-  if (set.has(name)) set.delete(name); else set.add(name);
-  tens[appId] = [...set];
-  try { await apiPost('setTens', tens); } catch {}
-  renderLeaderboard();
 }
 
 function renderAll() {
