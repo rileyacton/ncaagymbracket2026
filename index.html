@@ -181,6 +181,26 @@ header h1 span { color: var(--gold); }
 .entry-btn:hover { background: var(--gold-light); }
 .entry-btn:disabled { opacity: 0.4; cursor: default; }
 .entry-error { font-size: 11px; color: #cc6666; text-align: center; min-height: 16px; }
+.entry-lb-link {
+  width: 100%; padding: 10px; background: transparent;
+  border: 1px solid var(--border); border-radius: 4px;
+  font-family: 'Courier Prime', monospace; font-size: 13px;
+  color: var(--gold); cursor: pointer; transition: all .2s; letter-spacing: 1px;
+}
+.entry-lb-link:hover { background: #1a2e4a; border-color: var(--gold); }
+.entry-returning { width: 100%; max-width: 340px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.entry-welcome { font-size: 13px; color: var(--dim); margin-bottom: 8px; letter-spacing: 1px; }
+.entry-welcome span { color: var(--gold-light); font-weight: 700; font-family: 'Playfair Display', serif; font-size: 18px; }
+.entry-returning-btns { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.entry-btn-secondary {
+  background: transparent !important; border: 1px solid var(--border) !important;
+  color: var(--gold) !important; font-family: 'Courier Prime', monospace !important;
+  font-size: 13px !important; letter-spacing: 1px;
+}
+.entry-btn-secondary:hover { background: #1a2e4a !important; border-color: var(--gold) !important; }
+.entry-locked-msg { font-size: 11px; color: var(--dim); text-align: center; padding: 6px 0; }
+.entry-not-me { background: none; border: none; color: var(--dim); font-family: 'Courier Prime', monospace; font-size: 11px; cursor: pointer; text-decoration: underline; margin-top: 4px; transition: color .2s; }
+.entry-not-me:hover { color: var(--cream); }
 
 /* Player name in header */
 .player-name-bar {
@@ -303,13 +323,27 @@ header h1 span { color: var(--gold); }
   <div class="entry-star">🤸‍♀️</div>
   <div class="entry-title">NCAA Women's <span>Gymnastics</span><br>2026 Bracket Contest</div>
   <div class="entry-sub">April 1–18 · Fort Worth, TX</div>
-  <div class="entry-form">
+
+  <!-- New visitor: name entry form -->
+  <div class="entry-form" id="entry-new-form">
     <div>
       <div class="entry-label">Your Name</div>
       <input class="entry-input" id="entry-name-input" type="text" placeholder="Enter your name…" maxlength="40" autocomplete="name">
     </div>
     <div class="entry-error" id="entry-error"></div>
     <button class="entry-btn" id="entry-btn" disabled>Enter the Contest →</button>
+    <button class="entry-lb-link" id="entry-lb-link">View Leaderboard →</button>
+  </div>
+
+  <!-- Returning visitor: show their name + options -->
+  <div class="entry-returning" id="entry-returning" style="display:none">
+    <div class="entry-welcome">Welcome back, <span id="entry-returning-name"></span></div>
+    <div class="entry-returning-btns">
+      <button class="entry-btn" id="entry-edit-btn">Edit My Bracket →</button>
+      <div class="entry-locked-msg" id="entry-locked-msg" style="display:none">🔒 Bracket picking closed April 1</div>
+      <button class="entry-btn entry-btn-secondary" id="entry-lb-btn">View Leaderboard →</button>
+      <button class="entry-not-me" id="entry-not-me">Not you?</button>
+    </div>
   </div>
 </div>
 
@@ -344,6 +378,10 @@ header h1 span { color: var(--gold); }
   <button class="tab"        onclick="goTab('bx',this)">⭐ Bonus</button>
   <button class="tab"        onclick="goTab('sb',this)">📋 My Bracket</button>
   <button class="tab"        onclick="goTab('lb',this)">🏅 Leaderboard</button>
+</div>
+
+<div id="picks-locked-banner" style="display:none; text-align:center; padding:8px 20px; background:#1a0808; border-bottom:1px solid var(--crimson); font-size:11px; color:#cc8888; letter-spacing:1px;">
+  🔒 Bracket picking is now closed · April 1, 2026
 </div>
 
 <div class="panel active" id="panel-r1">
@@ -593,6 +631,11 @@ function clearState() {
   try { localStorage.removeItem(STORAGE_KEY); } catch {}
 }
 // ══════════════════════════════════════════
+// LOCK DATE — picks close April 1, 2026
+// ══════════════════════════════════════════
+const PICKS_LOCKED = new Date() >= new Date('2026-04-01T00:00:00');
+
+// ══════════════════════════════════════════
 // ENTRY SCREEN
 // ══════════════════════════════════════════
 function onNameInput() {
@@ -615,10 +658,27 @@ function showBracket(name) {
   document.getElementById('player-name-bar').style.display = 'block';
   document.getElementById('player-name-display').textContent = name;
 }
+function showEntryScreen() {
+  const hasName = !!S._playerName;
+  document.getElementById('entry-new-form').style.display = hasName ? 'none' : 'flex';
+  document.getElementById('entry-returning').style.display = hasName ? 'flex' : 'none';
+  if (hasName) {
+    document.getElementById('entry-returning-name').textContent = S._playerName;
+    const editBtn = document.getElementById('entry-edit-btn');
+    const lockedMsg = document.getElementById('entry-locked-msg');
+    if (PICKS_LOCKED) {
+      editBtn.style.display = 'none';
+      lockedMsg.style.display = 'block';
+    } else {
+      editBtn.style.display = 'block';
+      lockedMsg.style.display = 'none';
+    }
+  }
+  document.getElementById('entry-screen').style.display = 'flex';
+}
 
 // On load: if name already saved, skip entry screen
 document.addEventListener('DOMContentLoaded', function() {
-  // Attach entry screen handlers here so they're guaranteed to be in scope
   const nameInput = document.getElementById('entry-name-input');
   const entryBtn  = document.getElementById('entry-btn');
   if (nameInput) {
@@ -629,10 +689,42 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   if (entryBtn) entryBtn.addEventListener('click', submitEntry);
 
+  // "View Leaderboard" from new-visitor form
+  document.getElementById('entry-lb-link').addEventListener('click', () => {
+    document.getElementById('entry-screen').style.display = 'none';
+    document.getElementById('player-name-bar').style.display = 'none';
+    goTabId('lb');
+  });
+
+  // Returning user: Edit My Bracket
+  document.getElementById('entry-edit-btn').addEventListener('click', () => {
+    showBracket(S._playerName);
+  });
+
+  // Returning user: View Leaderboard
+  document.getElementById('entry-lb-btn').addEventListener('click', () => {
+    document.getElementById('entry-screen').style.display = 'none';
+    document.getElementById('player-name-bar').style.display = 'block';
+    document.getElementById('player-name-display').textContent = S._playerName;
+    goTabId('lb');
+  });
+
+  // "Not you?" — clear name and show new-visitor form
+  document.getElementById('entry-not-me').addEventListener('click', () => {
+    delete S._playerName;
+    delete S._submittedKey;
+    save();
+    document.getElementById('entry-name-input').value = '';
+    document.getElementById('entry-btn').disabled = true;
+    showEntryScreen();
+  });
+
   loadState();
   if (S._playerName) {
-    showBracket(S._playerName);
+    // Returning visitor — show entry screen with options
+    showEntryScreen();
   }
+  // If no name, entry screen is already visible by default
   renderAll();
 });const piWinner = id => S[id]||null;
 const quadAdvs = id => [S[id+'._1'],S[id+'._2']].filter(Boolean);
@@ -667,11 +759,13 @@ function cascadeFromRF() {
 }
 
 function pickPi(piId, name) {
+  if (PICKS_LOCKED) return;
   S[piId] = (S[piId]===name) ? null : name;
   if (!S[piId]) delete S[piId];
   cascadeFromPi(piId); save(); renderAll();
 }
 function pick2(baseKey, name, cascade) {
+  if (PICKS_LOCKED) return;
   const k1=baseKey+'._1', k2=baseKey+'._2';
   if (S[k1]===name) { delete S[k1]; if(S[k2]){S[k1]=S[k2];delete S[k2];} }
   else if (S[k2]===name) { delete S[k2]; }
@@ -680,21 +774,23 @@ function pick2(baseKey, name, cascade) {
   else { S[k1]=S[k2]; S[k2]=name; }
   cascade(); save(); renderAll();
 }
+function pickChamp(name) {
+  if (PICKS_LOCKED) return;
+  S.champion=(S.champion===name)?null:name; save(); renderAll();
+}
 function pickQuad(qid,name){ pick2(qid,name,cascadeFromQuads); }
 function pickRF(rid,name)  { pick2('rf_'+rid,name,cascadeFromRF); }
-function pickSF(sfId,name) { pick2(sfId,name,()=>{ if(S.champion&&!natPool().includes(S.champion))delete S.champion; }); save(); renderAll(); }
+function pickSF(sfId,name) {
+  if (PICKS_LOCKED) return;
+  pick2(sfId,name,()=>{ if(S.champion&&!natPool().includes(S.champion))delete S.champion; }); save(); renderAll();
+}
 function saveTiebreaker() {
+  if (PICKS_LOCKED) return;
   const val = document.getElementById('tb-input').value.trim();
   const num = parseFloat(val);
-  if (val === '' || isNaN(num)) {
-    delete S.tiebreaker;
-  } else {
-    S.tiebreaker = num;
-  }
+  if (val === '' || isNaN(num)) { delete S.tiebreaker; } else { S.tiebreaker = num; }
   save();
 }
-
-function pickChamp(name) { S.champion=(S.champion===name)?null:name; save(); renderAll(); }
 
 // ══════════════════════════════════════════
 // RENDER HELPERS
@@ -1946,7 +2042,7 @@ function updateSubmitButtons() {
 // GOOGLE SHEETS BACKEND
 // ══════════════════════════════════════════
 // Paste your deployed Apps Script Web App URL here:
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwvZlyqcaQ_R4NQk7UZlZbassuXDVmKc4GkDu_CHWjCOF4wx-dajUFv7UO-l9VEkUc2/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyCnDLU9-T5bxLkF_Ox2Fg0gbteB9K3Hjgshn5gZC27KDe6zm9xQt3ELnA6BISMx-c1/exec';
 
 async function apiGet(action) {
   const res = await fetch(`${SCRIPT_URL}?action=${action}`);
@@ -2156,6 +2252,9 @@ async function renderLeaderboard() {
 
 function renderAll() {
   renderR1(); renderR2(); renderRF(); renderSF(); renderNC(); renderBX(); renderSB(); updateProgress(); updateSubmitButtons();
+  // Show locked banner after April 1
+  const banner = document.getElementById('picks-locked-banner');
+  if (banner) banner.style.display = PICKS_LOCKED ? 'block' : 'none';
 }
 </script>
 </body>
