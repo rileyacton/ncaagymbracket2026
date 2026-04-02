@@ -634,7 +634,7 @@ function clearState() {
 // ══════════════════════════════════════════
 // LOCK DATE — picks close April 1, 2026
 // ══════════════════════════════════════════
-const PICKS_LOCKED = new Date() >= new Date('2026-04-02T23:59:59');
+const PICKS_LOCKED = new Date() >= new Date('2026-04-03T03:59:00Z');
 
 // ══════════════════════════════════════════
 // ENTRY SCREEN
@@ -644,20 +644,46 @@ function onNameInput() {
   document.getElementById('entry-btn').disabled = val.length < 2;
   document.getElementById('entry-error').textContent = '';
 }
-function submitEntry() {
+function showBracket(name) {
+  document.getElementById('entry-screen').style.display = 'none';
+  document.getElementById('player-name-bar').style.display = 'block';
+  document.getElementById('player-name-display').textContent = name;
+}
+function showEntryScreen() {
+  const hasName = !!S._playerName;
+  document.getElementById('entry-new-form').style.display = hasName ? 'none' : 'flex';
+  document.getElementById('entry-returning').style.display = hasName ? 'flex' : 'none';
+  if (hasName) {
+    document.getElementById('entry-returning-name').textContent = S._playerName;
+    const editBtn   = document.getElementById('entry-edit-btn');
+    const lockedMsg = document.getElementById('entry-locked-msg');
+    if (PICKS_LOCKED) {
+      editBtn.style.display   = 'none';
+      lockedMsg.style.display = 'block';
+    } else {
+      editBtn.style.display   = 'block';
+      lockedMsg.style.display = 'none';
+    }
+  }
+  document.getElementById('entry-screen').style.display = 'flex';
+}
+
+async function submitEntry() {
   const name = document.getElementById('entry-name-input').value.trim();
   if (name.length < 2) {
     document.getElementById('entry-error').textContent = 'Please enter at least 2 characters.';
     return;
   }
+  const btn = document.getElementById('entry-btn');
+  btn.disabled = true;
+  btn.textContent = 'Loading…';
   S._playerName = name;
   save();
+  // Try to restore existing bracket from sheet
+  await loadBracketFromSheet(name);
+  btn.textContent = 'Enter the Contest →';
   showBracket(name);
-}
-function showBracket(name) {
-  document.getElementById('entry-screen').style.display = 'none';
-  document.getElementById('player-name-bar').style.display = 'block';
-  document.getElementById('player-name-display').textContent = name;
+  renderAll();
 }
 function showEntryScreen() {
   const hasName = !!S._playerName;
@@ -698,8 +724,15 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Returning user: Edit My Bracket
-  document.getElementById('entry-edit-btn').addEventListener('click', () => {
+  document.getElementById('entry-edit-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('entry-edit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Loading…';
+    await loadBracketFromSheet(S._playerName);
+    btn.disabled = false;
+    btn.textContent = 'Edit My Bracket →';
     showBracket(S._playerName);
+    renderAll();
   });
 
   // Returning user: View Leaderboard
@@ -2082,6 +2115,43 @@ async function apiPost(action, data) {
   const payload = encodeURIComponent(JSON.stringify(data));
   const res = await fetch(`${SCRIPT_URL}?action=${action}&payload=${payload}`);
   return res.json();
+}
+
+// Fetch this person's saved bracket from Google Sheets and restore it into S
+async function loadBracketFromSheet(name) {
+  try {
+    const b = await apiGet('getBrackets');
+    const snap = (b.brackets || []).find(br =>
+      br.name && br.name.toLowerCase() === name.toLowerCase()
+    );
+    if (!snap) return false;
+    REGIONALS.forEach(reg => reg.playins.forEach(pi => {
+      if (snap[pi.id]) S[pi.id] = snap[pi.id];
+    }));
+    REGIONALS.forEach(reg => reg.quads.forEach(q => {
+      if (snap[q.id+'._1']) S[q.id+'._1'] = snap[q.id+'._1'];
+      if (snap[q.id+'._2']) S[q.id+'._2'] = snap[q.id+'._2'];
+    }));
+    REGIONALS.forEach(reg => {
+      if (snap['rf_'+reg.id+'._1']) S['rf_'+reg.id+'._1'] = snap['rf_'+reg.id+'._1'];
+      if (snap['rf_'+reg.id+'._2']) S['rf_'+reg.id+'._2'] = snap['rf_'+reg.id+'._2'];
+    });
+    SF.forEach(sf => {
+      if (snap[sf.id+'._1']) S[sf.id+'._1'] = snap[sf.id+'._1'];
+      if (snap[sf.id+'._2']) S[sf.id+'._2'] = snap[sf.id+'._2'];
+    });
+    if (snap.champion)        S.champion   = snap.champion;
+    if (snap.tiebreaker)      S.tiebreaker = snap.tiebreaker;
+    BONUS_APPARATUSES.forEach(app => {
+      if (snap['bx_'+app.id]) S['bx_'+app.id] = snap['bx_'+app.id];
+    });
+    S._submittedKey = snap.key;
+    save();
+    return true;
+  } catch(e) {
+    console.error('Could not load bracket from sheet:', e);
+    return false;
+  }
 }
 
 // Submit current bracket to Google Sheets
