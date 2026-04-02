@@ -2125,8 +2125,19 @@ async function loadBracketFromSheet(name) {
       br.name && br.name.toLowerCase() === name.toLowerCase()
     );
     if (!snap) return false;
+    // Restore play-in picks
     REGIONALS.forEach(reg => reg.playins.forEach(pi => {
-      if (snap[pi.id]) S[pi.id] = snap[pi.id];
+      if (snap[pi.id]) {
+        S[pi.id] = snap[pi.id];
+      } else {
+        // Infer from R2 picks: if either play-in team appears in the quad, that was their pick
+        const quad = reg.quads.find(q => q.piSlot && q.piId === pi.id);
+        if (quad) {
+          const r2picks = [snap[quad.id+'._1'], snap[quad.id+'._2']].filter(Boolean);
+          const inferred = r2picks.find(t => t === pi.a || t === pi.b);
+          if (inferred) S[pi.id] = inferred;
+        }
+      }
     }));
     REGIONALS.forEach(reg => reg.quads.forEach(q => {
       if (snap[q.id+'._1']) S[q.id+'._1'] = snap[q.id+'._1'];
