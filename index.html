@@ -2025,9 +2025,9 @@ function scoreBracket(snap, results) {
   // Champion
   if (results.champ && snap.champion === results.champ) champ = 1;
 
-  // Bonus: 1pt per correct 10.0 pick
+  // Bonus: 1pt per correct 10.0 pick — only scored when bonusFinal is set
   let bonus = 0;
-  if (results.tens) {
+  if (results.bonusFinal && results.tens) {
     BONUS_APPARATUSES.forEach(app => {
       const picks = snap['bx_'+app.id] || [];
       const actuals = new Set(results.tens[app.id] || []);
@@ -2197,9 +2197,8 @@ function buildDetailHTML(snap, results, colSpan) {
   const bonusSections = BONUS_APPARATUSES.map(app => {
     const picks = snap['bx_'+app.id] || [];
     if (!picks.length) return '';
-    const appActuals = (results.tens || {})[app.id];
-    const tensKnown = !!(appActuals && appActuals.length > 0);
-    const actualSet = new Set(appActuals || []);
+    const tensKnown = !!results.bonusFinal;
+    const actualSet = new Set((results.tens || {})[app.id] || []);
     const items = picks.map(p => {
       const n = typeof p === 'string' ? p : p.name;
       return teamMark(n, actualSet, tensKnown);
@@ -2250,6 +2249,7 @@ async function renderLeaderboard() {
     });
     if (rd.champ)          results.champ      = rd.champ;
     if (rd.champScore != null) results.champScore = parseFloat(rd.champScore);
+    results.bonusFinal = rd.bonusFinal === 'true' || rd.bonusFinal === true;
   } catch {}
   try {
     const t = await apiGet('getTens');
