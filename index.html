@@ -634,7 +634,7 @@ function clearState() {
 // ══════════════════════════════════════════
 // LOCK DATE — picks close April 1, 2026
 // ══════════════════════════════════════════
-const PICKS_LOCKED = new Date() >= new Date('2026-04-02T12:00:00Z');
+const PICKS_LOCKED = new Date() >= new Date('2026-04-02T12:00:00');
 
 // ══════════════════════════════════════════
 // ENTRY SCREEN
@@ -1991,31 +1991,40 @@ function countPicks() {
 // results = { r2: Set, rf: Set, sf: Set, champ: string }
 function scoreBracket(snap, results) {
   let r1=0, r2=0, rf=0, sf=0, champ=0;
-  // Play-in winners (1pt each)
-  if (results.r1 && results.r1.size > 0) {
-    REGIONALS.forEach(reg => reg.playins.forEach(pi => {
-      if (snap[pi.id] && results.r1.has(snap[pi.id])) r1++;
-    }));
-  }
-  if (results.r2) {
-    REGIONALS.forEach(reg => reg.quads.forEach(q => {
-      if (snap[q.id+'._1'] && results.r2.has(snap[q.id+'._1'])) r2++;
-      if (snap[q.id+'._2'] && results.r2.has(snap[q.id+'._2'])) r2++;
-    }));
-  }
-  if (results.rf) {
-    REGIONALS.forEach(reg => {
-      if (snap['rf_'+reg.id+'._1'] && results.rf.has(snap['rf_'+reg.id+'._1'])) rf++;
-      if (snap['rf_'+reg.id+'._2'] && results.rf.has(snap['rf_'+reg.id+'._2'])) rf++;
-    });
-  }
-  if (results.sf) {
-    SF.forEach(s => {
-      if (snap[s.id+'._1'] && results.sf.has(snap[s.id+'._1'])) sf++;
-      if (snap[s.id+'._2'] && results.sf.has(snap[s.id+'._2'])) sf++;
-    });
-  }
+
+  // R1: play-in winners
+  REGIONALS.forEach(reg => reg.playins.forEach(pi => {
+    const actual = results.r1[pi.id];
+    if (actual && snap[pi.id] === actual) r1++;
+  }));
+
+  // R2: per quad
+  REGIONALS.forEach(reg => reg.quads.forEach(q => {
+    const actual = results.r2[q.id]; // Set or undefined
+    if (!actual) return;
+    if (snap[q.id+'._1'] && actual.has(snap[q.id+'._1'])) r2++;
+    if (snap[q.id+'._2'] && actual.has(snap[q.id+'._2'])) r2++;
+  }));
+
+  // RF: per regional
+  REGIONALS.forEach(reg => {
+    const actual = results.rf[reg.id];
+    if (!actual) return;
+    if (snap['rf_'+reg.id+'._1'] && actual.has(snap['rf_'+reg.id+'._1'])) rf++;
+    if (snap['rf_'+reg.id+'._2'] && actual.has(snap['rf_'+reg.id+'._2'])) rf++;
+  });
+
+  // SF: per session
+  SF.forEach(s => {
+    const actual = results.sf[s.id];
+    if (!actual) return;
+    if (snap[s.id+'._1'] && actual.has(snap[s.id+'._1'])) sf++;
+    if (snap[s.id+'._2'] && actual.has(snap[s.id+'._2'])) sf++;
+  });
+
+  // Champion
   if (results.champ && snap.champion === results.champ) champ = 1;
+
   // Bonus: 1pt per correct 10.0 pick
   let bonus = 0;
   if (results.tens) {
@@ -2028,6 +2037,7 @@ function scoreBracket(snap, results) {
       });
     });
   }
+
   return {
     r1, r2, rf, sf, champ, bonus,
     total: r1*PTS.r1 + r2*PTS.r2 + rf*PTS.rf + sf*PTS.sf + champ*PTS.champ + bonus
@@ -2112,62 +2122,87 @@ function toggleLbRow(id) {
 }
 
 function buildDetailHTML(snap, results, colSpan) {
-  // Helper: mark a team pick
-  function teamMark(name, resultSet, resultKnown) {
+  // Helper: mark a team pick against a known set (or single value)
+  // known can be a Set, a string, or null (not yet known)
+  function teamMark(name, actual, known) {
     if (!name) return '';
     let icon, cls;
-    if (!resultKnown) { icon = '·'; cls = 'pk-pending'; }
-    else if (resultSet instanceof Set ? resultSet.has(name) : resultSet === name) { icon = '✓'; cls = 'pk-correct'; }
-    else { icon = '✗'; cls = 'pk-wrong'; }
+    if (!known) {
+      icon = '·'; cls = 'pk-pending';
+    } else if (actual instanceof Set ? actual.has(name) : actual === name) {
+      icon = '✓'; cls = 'pk-correct';
+    } else {
+      icon = '✗'; cls = 'pk-wrong';
+    }
     return `<div class="lb-pick"><span class="pk-icon ${cls}">${icon}</span><span class="${cls}">${name}</span></div>`;
   }
 
-  const r1Known    = results.r1.size > 0;
-  const r2Known    = results.r2.size > 0;
-  const rfKnown    = results.rf.size > 0;
-  const sfKnown    = results.sf.size > 0;
-  const champKnown = !!results.champ;
+  function makeSection(label, items) {
+    if (!items.length) return '';
+    return `<div class="lb-detail-section">
+      <div class="lb-detail-label">${label}</div>
+      <div class="lb-detail-picks">${items.join('')}</div>
+    </div>`;
+  }
 
-  // Collect R1 (play-in) picks
-  const r1Picks = [];
+  // ── Play-In Winners → Regional Semis ──────────────────────
+  const r1Items = [];
   REGIONALS.forEach(reg => reg.playins.forEach(pi => {
-    if (snap[pi.id]) r1Picks.push(snap[pi.id]);
+    const pick = snap[pi.id];
+    if (!pick) return;
+    const actual = results.r1[pi.id] || null;
+    r1Items.push(teamMark(pick, actual, !!actual));
   }));
 
-  // Collect R2 picks from all quads
-  const r2Picks = [];
-  REGIONALS.forEach(reg => reg.quads.forEach(q => {
-    if (snap[q.id+'._1']) r2Picks.push(snap[q.id+'._1']);
-    if (snap[q.id+'._2']) r2Picks.push(snap[q.id+'._2']);
-  }));
-
-  // Collect RF picks
-  const rfPicks = [];
+  // ── Second Round → Regional Finals (per quad) ──────────────
+  // Each quad's result stored as r2_<regid>_<a|b>
+  const r2Sections = [];
   REGIONALS.forEach(reg => {
-    if (snap['rf_'+reg.id+'._1']) rfPicks.push(snap['rf_'+reg.id+'._1']);
-    if (snap['rf_'+reg.id+'._2']) rfPicks.push(snap['rf_'+reg.id+'._2']);
+    reg.quads.forEach(q => {
+      const picks = [snap[q.id+'._1'], snap[q.id+'._2']].filter(Boolean);
+      if (!picks.length) return;
+      const key = 'r2_' + q.id; // e.g. r2_q_lex_a
+      const actual = results.r2[key] || null; // Set or null
+      const known = !!(actual && actual.size > 0);
+      const items = picks.map(n => teamMark(n, actual, known));
+      r2Sections.push(...items);
+    });
   });
 
-  // Collect SF picks
-  const sfPicks = [];
+  // ── Regional Finals → National Semis (per regional) ────────
+  const rfSections = [];
+  REGIONALS.forEach(reg => {
+    const picks = [snap['rf_'+reg.id+'._1'], snap['rf_'+reg.id+'._2']].filter(Boolean);
+    if (!picks.length) return;
+    const actual = results.rf[reg.id] || null;
+    const known = !!(actual && actual.size > 0);
+    picks.forEach(n => rfSections.push(teamMark(n, actual, known)));
+  });
+
+  // ── Semis → National Finals (per session) ──────────────────
+  const sfSections = [];
   SF.forEach(sf => {
-    if (snap[sf.id+'._1']) sfPicks.push(snap[sf.id+'._1']);
-    if (snap[sf.id+'._2']) sfPicks.push(snap[sf.id+'._2']);
+    const picks = [snap[sf.id+'._1'], snap[sf.id+'._2']].filter(Boolean);
+    if (!picks.length) return;
+    const actual = results.sf[sf.id] || null;
+    const known = !!(actual && actual.size > 0);
+    picks.forEach(n => sfSections.push(teamMark(n, actual, known)));
   });
 
-  // Bonus picks
+  // ── Champion ────────────────────────────────────────────────
+  const champPick = snap.champion;
+  const champItems = champPick ? [teamMark(champPick, results.champ, !!results.champ)] : [];
+
+  // ── Bonus 10.0 picks ────────────────────────────────────────
   const bonusSections = BONUS_APPARATUSES.map(app => {
     const picks = snap['bx_'+app.id] || [];
     if (!picks.length) return '';
-    const tensKnown = results.tens && Object.keys(results.tens).length > 0;
-    const actuals = new Set((results.tens || {})[app.id] || []);
+    const appActuals = (results.tens || {})[app.id];
+    const tensKnown = !!(appActuals && appActuals.length > 0);
+    const actualSet = new Set(appActuals || []);
     const items = picks.map(p => {
       const n = typeof p === 'string' ? p : p.name;
-      let icon, cls;
-      if (!tensKnown) { icon = '·'; cls = 'pk-pending'; }
-      else if (actuals.has(n)) { icon = '✓'; cls = 'pk-correct'; }
-      else { icon = '✗'; cls = 'pk-wrong'; }
-      return `<div class="lb-pick"><span class="pk-icon ${cls}">${icon}</span><span class="${cls}">${n}</span></div>`;
+      return teamMark(n, actualSet, tensKnown);
     }).join('');
     return `<div class="lb-detail-section">
       <div class="lb-detail-label">${app.icon} ${app.label}</div>
@@ -2175,38 +2210,45 @@ function buildDetailHTML(snap, results, colSpan) {
     </div>`;
   }).join('');
 
-  const sections = [
-    { label: '① Play-In Winners',   picks: r1Picks,  set: results.r1,    known: r1Known },
-    { label: '② Second Round',      picks: r2Picks,  set: results.r2,    known: r2Known },
-    { label: '③ Regional Final',    picks: rfPicks,  set: results.rf,    known: rfKnown },
-    { label: '④ Semifinal',         picks: sfPicks,  set: results.sf,    known: sfKnown },
-    { label: '⑤ Champion',          picks: snap.champion ? [snap.champion] : [], set: results.champ, known: champKnown, single: true },
-  ].map(sec => {
-    if (!sec.picks.length) return '';
-    const items = sec.picks.map(n => teamMark(n, sec.set, sec.known)).join('');
-    return `<div class="lb-detail-section">
-      <div class="lb-detail-label">${sec.label}</div>
-      <div class="lb-detail-picks">${items}</div>
-    </div>`;
-  }).join('');
+  const html = [
+    makeSection('① To Regional Semis (Play-In)', r1Items),
+    makeSection('② To Regional Finals', r2Sections),
+    makeSection('③ To National Semis', rfSections),
+    makeSection('④ To National Finals', sfSections),
+    makeSection('⑤ National Champion', champItems),
+  ].join('') + bonusSections;
 
-  return `<td colspan="${colSpan}">
-    <div class="lb-detail-inner">${sections}${bonusSections}</div>
-  </td>`;
+  return `<td colspan="${colSpan}"><div class="lb-detail-inner">${html}</div></td>`;
 }
 
 async function renderLeaderboard() {
   updateSubmitButtons();
 
-  let results = { r1: new Set(), r2: new Set(), rf: new Set(), sf: new Set(), champ: null, tens: {} };
+  let results = { r1: {}, r2: {}, rf: {}, sf: {}, champ: null, champScore: null, tens: {} };
   try {
     const r = await apiGet('getResults');
     const rd = r.results || {};
-    if (rd.r1)        results.r1        = new Set(rd.r1);
-    if (rd.r2)        results.r2        = new Set(rd.r2);
-    if (rd.rf)        results.rf        = new Set(rd.rf);
-    if (rd.sf)        results.sf        = new Set(rd.sf);
-    if (rd.champ)     results.champ     = rd.champ;
+    // R1: per play-in — r1_lex, r1_crv, r1_btr, r1_tmp (single winner each)
+    REGIONALS.forEach(reg => reg.playins.forEach(pi => {
+      const val = rd['r1_' + reg.id];
+      if (val) results.r1[pi.id] = Array.isArray(val) ? val[0] : val;
+    }));
+    // R2: per quad — r2_q_lex_a, r2_q_lex_b, etc. (2 teams each)
+    REGIONALS.forEach(reg => reg.quads.forEach(q => {
+      const val = rd['r2_' + q.id];
+      if (val && val.length) results.r2[q.id] = new Set(val);
+    }));
+    // RF: per regional — rf_lex, rf_crv, rf_btr, rf_tmp (2 teams each)
+    REGIONALS.forEach(reg => {
+      const val = rd['rf_' + reg.id];
+      if (val && val.length) results.rf[reg.id] = new Set(val);
+    });
+    // SF: per session — sf_a, sf_b (2 teams each)
+    SF.forEach(sf => {
+      const val = rd[sf.id];
+      if (val && val.length) results.sf[sf.id] = new Set(val);
+    });
+    if (rd.champ)          results.champ      = rd.champ;
     if (rd.champScore != null) results.champScore = parseFloat(rd.champScore);
   } catch {}
   try {
