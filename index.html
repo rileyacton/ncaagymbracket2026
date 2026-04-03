@@ -2250,14 +2250,12 @@ function buildDetailHTML(snap, results, colSpan) {
   }));
 
   // ── Second Round → Regional Finals (per quad) ──────────────
-  // Each quad's result stored as r2_<regid>_<a|b>
   const r2Sections = [];
   REGIONALS.forEach(reg => {
     reg.quads.forEach(q => {
       const picks = [snap[q.id+'._1'], snap[q.id+'._2']].filter(Boolean);
       if (!picks.length) return;
-      const key = 'r2_' + q.id; // e.g. r2_q_lex_a
-      const actual = results.r2[key] || null; // Set or null
+      const actual = results.r2[q.id] || null; // keyed by q.id in results object
       const known = !!(actual && actual.size > 0);
       const items = picks.map(n => teamMark(n, actual, known));
       r2Sections.push(...items);
