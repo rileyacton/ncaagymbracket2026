@@ -2067,9 +2067,9 @@ function scoreBracket(snap, results) {
   // Champion
   if (results.champ && snap.champion === results.champ) champ = 1;
 
-  // Bonus: 1pt per correct 10.0 pick — only scored when bonusFinal is set
+  // Bonus: 1pt per correct 10.0 pick — score confirmed hits immediately
   let bonus = 0;
-  if (results.bonusFinal && results.tens) {
+  if (results.tens) {
     BONUS_APPARATUSES.forEach(app => {
       const picks = snap['bx_'+app.id] || [];
       const actuals = new Set(results.tens[app.id] || []);
@@ -2290,11 +2290,21 @@ function buildDetailHTML(snap, results, colSpan) {
   const bonusSections = BONUS_APPARATUSES.map(app => {
     const picks = snap['bx_'+app.id] || [];
     if (!picks.length) return '';
-    const tensKnown = !!results.bonusFinal;
-    const actualSet = new Set((results.tens || {})[app.id] || []);
+    const appActuals = new Set((results.tens || {})[app.id] || []);
     const items = picks.map(p => {
       const n = typeof p === 'string' ? p : p.name;
-      return teamMark(n, actualSet, tensKnown);
+      let icon, cls;
+      if (appActuals.has(n)) {
+        // Confirmed 10.0 — always show ✓
+        icon = '✓'; cls = 'pk-correct';
+      } else if (results.bonusFinal) {
+        // Tournament over — show ✗ for misses
+        icon = '✗'; cls = 'pk-wrong';
+      } else {
+        // Still pending
+        icon = '·'; cls = 'pk-pending';
+      }
+      return `<div class="lb-pick"><span class="pk-icon ${cls}">${icon}</span><span class="${cls}">${n}</span></div>`;
     }).join('');
     return `<div class="lb-detail-section">
       <div class="lb-detail-label">${app.icon} ${app.label}</div>
